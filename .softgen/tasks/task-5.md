@@ -1,6 +1,6 @@
 ---
 title: Upload & Validation Flow
-status: todo
+status: done
 priority: high
 type: feature
 tags: [upload, ai, forms]
@@ -13,14 +13,14 @@ position: 5
 Screenshot upload with manual validation form. Initially manual input (AI/OCR deferred to later phase). User confirms all extracted data before submission.
 
 ## Checklist
-- [ ] Create /upload page with drag-drop zone
-- [ ] Build image preview component
-- [ ] Create validation form with brand/model dropdowns
-- [ ] Add reputation and price input fields
-- [ ] Build 8-part rarity grid (clickable icons to select rarity)
-- [ ] Implement form submission to observations table
-- [ ] Trigger learning algorithm on successful validation
-- [ ] Show success message with "Contribuer à nouveau" CTA
+- [x] Create /upload page with drag-drop zone
+- [x] Build image preview component
+- [x] Create validation form with brand/model dropdowns
+- [x] Add reputation and price input fields
+- [x] Build 8-part rarity grid (clickable icons to select rarity)
+- [x] Implement form submission to observations table
+- [x] Trigger learning algorithm on successful validation
+- [x] Show success message with "Contribuer à nouveau" CTA
 
 ## Acceptance
 - User can upload screenshot and see preview

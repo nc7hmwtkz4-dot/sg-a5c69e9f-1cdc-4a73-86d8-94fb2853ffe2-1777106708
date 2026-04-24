@@ -1,6 +1,6 @@
 ---
 title: Price Simulator
-status: in_progress
+status: done
 priority: high
 type: feature
 tags: [calculator, ui]
