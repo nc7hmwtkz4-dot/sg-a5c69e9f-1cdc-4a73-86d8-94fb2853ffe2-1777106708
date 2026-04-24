@@ -75,36 +75,58 @@ export default function UploadPage() {
         const dataUrl = reader.result as string;
         setImage(dataUrl);
         
-        // Attempt automatic analysis
         toast({
           title: "🔍 Analyse en cours...",
-          description: "Extraction automatique des données (bêta)",
+          description: "Extraction automatique des données via IA",
         });
         
         try {
           const analysis = await analyzeScreenshot(dataUrl);
           
-          // If confidence is too low, user will fill manually
-          if (analysis.confidence < 0.5) {
+          if (analysis.confidence > 0.5) {
+            // Pre-fill form with AI-extracted data
+            if (analysis.brand) {
+              setSelectedBrand(analysis.brand);
+              await loadModels(analysis.brand);
+            }
+            
+            if (analysis.reputation) {
+              setReputation(analysis.reputation.toString());
+            }
+            
+            if (analysis.priceMin) {
+              setPriceMin(analysis.priceMin.toString());
+            }
+            
+            if (analysis.parts) {
+              setParts([
+                analysis.parts.engine,
+                analysis.parts.clutch,
+                analysis.parts.turbo1,
+                analysis.parts.turbo2,
+                analysis.parts.suspension1,
+                analysis.parts.suspension2,
+                analysis.parts.transmission,
+                analysis.parts.tires,
+              ] as Rarity[]);
+            }
+            
             toast({
-              title: "⚠️ Analyse incomplète",
-              description: "Veuillez vérifier et compléter les données manuellement",
-              variant: "default",
+              title: "✅ Données extraites !",
+              description: `Confiance: ${Math.round(analysis.confidence * 100)}% - Vérifiez avant de valider`,
             });
           } else {
             toast({
-              title: "✅ Données extraites !",
-              description: "Vérifiez et corrigez si nécessaire avant de valider",
+              title: "⚠️ Extraction partielle",
+              description: "Veuillez compléter les données manuellement",
+              variant: "default",
             });
           }
-          
-          // Pre-fill form with extracted data (even if empty, user can fill)
-          // Note: For now, analysis returns empty data, user fills manually
         } catch (error) {
           console.error("Analysis failed:", error);
           toast({
             title: "ℹ️ Saisie manuelle",
-            description: "L'analyse automatique n'a pas pu extraire les données",
+            description: "L'analyse automatique n'est pas disponible - complétez manuellement",
             variant: "default",
           });
         }
@@ -122,20 +144,57 @@ export default function UploadPage() {
         const dataUrl = reader.result as string;
         setImage(dataUrl);
         
-        // Same auto-analysis as upload
         toast({
           title: "🔍 Analyse en cours...",
-          description: "Extraction automatique des données (bêta)",
+          description: "Extraction automatique des données via IA",
         });
         
         try {
-          await analyzeScreenshot(dataUrl);
-          toast({
-            title: "ℹ️ Saisie manuelle requise",
-            description: "Complétez les informations visibles sur le screenshot",
-          });
+          const analysis = await analyzeScreenshot(dataUrl);
+          
+          if (analysis.confidence > 0.5) {
+            if (analysis.brand) {
+              setSelectedBrand(analysis.brand);
+              await loadModels(analysis.brand);
+            }
+            
+            if (analysis.reputation) {
+              setReputation(analysis.reputation.toString());
+            }
+            
+            if (analysis.priceMin) {
+              setPriceMin(analysis.priceMin.toString());
+            }
+            
+            if (analysis.parts) {
+              setParts([
+                analysis.parts.engine,
+                analysis.parts.clutch,
+                analysis.parts.turbo1,
+                analysis.parts.turbo2,
+                analysis.parts.suspension1,
+                analysis.parts.suspension2,
+                analysis.parts.transmission,
+                analysis.parts.tires,
+              ] as Rarity[]);
+            }
+            
+            toast({
+              title: "✅ Données extraites !",
+              description: `Confiance: ${Math.round(analysis.confidence * 100)}% - Vérifiez avant de valider`,
+            });
+          } else {
+            toast({
+              title: "ℹ️ Saisie manuelle requise",
+              description: "Complétez les informations visibles sur le screenshot",
+            });
+          }
         } catch (error) {
           console.error("Analysis failed:", error);
+          toast({
+            title: "ℹ️ Saisie manuelle",
+            description: "Complétez les informations visibles sur le screenshot",
+          });
         }
       };
       reader.readAsDataURL(file);
@@ -254,7 +313,7 @@ export default function UploadPage() {
                   ou cliquez pour parcourir vos fichiers
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  ℹ️ L'analyse automatique OCR/IA sera disponible prochainement. Pour l'instant, vous devrez saisir les données manuellement après l'upload.
+                  💡 L'IA analyse automatiquement votre screenshot - vérifiez et corrigez les données avant validation
                 </p>
               </div>
               <input
@@ -300,12 +359,12 @@ export default function UploadPage() {
                 <div>
                   <h2 className="text-xl font-bold font-display mb-2">Validation des données</h2>
                   <p className="text-sm text-muted-foreground">
-                    Saisissez les informations visibles sur votre screenshot
+                    Vérifiez les données extraites automatiquement
                   </p>
                 </div>
-                <Badge variant="outline" className="gap-2">
+                <Badge variant="default" className="gap-2 bg-accent">
                   <Sparkles className="w-3 h-3" />
-                  <span className="text-xs">Manuel (IA en bêta)</span>
+                  <span className="text-xs">Analyse IA</span>
                 </Badge>
               </div>
 
