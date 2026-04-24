@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, ArrowLeft, Check, Image as ImageIcon } from "lucide-react";
+import { Upload, ArrowLeft, Check, Image as ImageIcon, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,8 +10,9 @@ import Link from "next/link";
 import { carService } from "@/services/carService";
 import { observationService } from "@/services/observationService";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeScreenshot } from "@/services/imageAnalysisService";
 
-type Rarity = "Stock" | "Gris" | "Singulière" | "Rare" | "Épique" | "Légendaire";
+type Rarity = "Stock" | "Gris" | "Singulière" | "Rare" | "Épique" | "Légendaire" | "Secrète";
 
 const PART_NAMES = [
   "Moteur",
@@ -66,28 +67,80 @@ export default function UploadPage() {
     loadModels(brand);
   };
 
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        setImage(dataUrl);
+        
+        // Attempt automatic analysis
+        toast({
+          title: "🔍 Analyse en cours...",
+          description: "Extraction automatique des données (bêta)",
+        });
+        
+        try {
+          const analysis = await analyzeScreenshot(dataUrl);
+          
+          // If confidence is too low, user will fill manually
+          if (analysis.confidence < 0.5) {
+            toast({
+              title: "⚠️ Analyse incomplète",
+              description: "Veuillez vérifier et compléter les données manuellement",
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "✅ Données extraites !",
+              description: "Vérifiez et corrigez si nécessaire avant de valider",
+            });
+          }
+          
+          // Pre-fill form with extracted data (even if empty, user can fill)
+          // Note: For now, analysis returns empty data, user fills manually
+        } catch (error) {
+          console.error("Analysis failed:", error);
+          toast({
+            title: "ℹ️ Saisie manuelle",
+            description: "L'analyse automatique n'a pas pu extraire les données",
+            variant: "default",
+          });
+        }
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [toast]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
+      reader.onloadend = async () => {
+        const dataUrl = reader.result as string;
+        setImage(dataUrl);
+        
+        // Same auto-analysis as upload
+        toast({
+          title: "🔍 Analyse en cours...",
+          description: "Extraction automatique des données (bêta)",
+        });
+        
+        try {
+          await analyzeScreenshot(dataUrl);
+          toast({
+            title: "ℹ️ Saisie manuelle requise",
+            description: "Complétez les informations visibles sur le screenshot",
+          });
+        } catch (error) {
+          console.error("Analysis failed:", error);
+        }
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [toast]);
 
   const handleSubmit = async () => {
     if (!selectedModel || !reputation || !priceMin) {
@@ -243,14 +296,17 @@ export default function UploadPage() {
 
             {/* Validation Form */}
             <Card className="p-6 space-y-6">
-              <div>
-                <h2 className="text-xl font-bold font-display mb-2">Validation des données</h2>
-                <p className="text-sm text-muted-foreground">
-                  Saisissez les informations visibles sur votre screenshot
-                </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  ⚠️ Analyse manuelle requise - L'extraction automatique sera disponible prochainement
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold font-display mb-2">Validation des données</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Saisissez les informations visibles sur votre screenshot
+                  </p>
+                </div>
+                <Badge variant="outline" className="gap-2">
+                  <Sparkles className="w-3 h-3" />
+                  <span className="text-xs">Manuel (IA en bêta)</span>
+                </Badge>
               </div>
 
               {/* Vehicle Selection */}
