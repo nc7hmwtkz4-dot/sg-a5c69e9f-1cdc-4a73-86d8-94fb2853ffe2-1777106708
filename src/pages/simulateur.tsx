@@ -64,7 +64,7 @@ export default function Simulateur() {
   };
 
   const loadPartWeights = async () => {
-    const weights = await partWeightsService.getRarityBonuses();
+    const weights = await partWeightsService.getAllWeights();
     setPartWeights(weights);
   };
 
@@ -240,7 +240,7 @@ export default function Simulateur() {
               <div>
                 <h2 className="text-xl font-bold font-display">Estimations</h2>
                 <p className="text-sm text-muted-foreground">
-                  Basées sur {Object.values(partWeights).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0)} observations
+                  Basées sur {String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations
                 </p>
               </div>
               <Badge variant={prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"}>
