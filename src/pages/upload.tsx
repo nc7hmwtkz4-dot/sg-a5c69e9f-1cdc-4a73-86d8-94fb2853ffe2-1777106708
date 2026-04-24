@@ -11,6 +11,8 @@ import { carService } from "@/services/carService";
 import { observationService } from "@/services/observationService";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeScreenshot } from "@/services/imageAnalysisService";
+import { HorizontalAd } from "@/components/AdSense";
+import { DonationButtons } from "@/components/DonationButtons";
 
 type Rarity = "Stock" | "Gris" | "Singulière" | "Rare" | "Épique" | "Légendaire" | "Secrète";
 
@@ -474,6 +476,11 @@ export default function UploadPage() {
               </Button>
             </Card>
           </>
+        )}
+
+        {/* Donation Section */}
+        {image && !showSuccess && (
+          <DonationButtons />
         )}
       </main>
     </div>

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { DonationButtons, CompactDonationButton } from "@/components/DonationButtons";
+import { StickyBottomAd } from "@/components/AdSense";
 
 export default function Home() {
   const [stats, setStats] = useState({
@@ -140,43 +142,34 @@ export default function Home() {
           </Card>
         </section>
 
+        {/* Donation Section */}
+        <section className="max-w-2xl mx-auto">
+          <DonationButtons showProgressBar />
+        </section>
+
         {/* How It Works */}
-        <section className="max-w-4xl mx-auto space-y-6">
-          <h2 className="text-3xl font-bold text-center text-foreground font-display">
-            Comment ça Marche
-          </h2>
+        <section className="max-w-4xl mx-auto text-center space-y-4">
+          <h2 className="text-2xl font-bold font-display">Comment ça marche ?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="p-6 space-y-3">
-              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold font-display">
-                1
-              </div>
-              <h3 className="font-bold text-foreground font-display">
-                Choisissez votre Mode
-              </h3>
+              <div className="text-4xl">📸</div>
+              <h3 className="font-bold font-display">1. Capturez</h3>
               <p className="text-sm text-muted-foreground">
-                Simulateur pour calculer un prix, ou Upload pour contribuer aux données.
+                Prenez un screenshot de votre véhicule in-game
               </p>
             </Card>
             <Card className="p-6 space-y-3">
-              <div className="w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold font-display">
-                2
-              </div>
-              <h3 className="font-bold text-foreground font-display">
-                Configurez ou Validez
-              </h3>
+              <div className="text-4xl">🤖</div>
+              <h3 className="font-bold font-display">2. Analysez</h3>
               <p className="text-sm text-muted-foreground">
-                Sélectionnez vos pièces ou validez les données extraites de votre screenshot.
+                L'IA extrait automatiquement les données
               </p>
             </Card>
             <Card className="p-6 space-y-3">
-              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold font-display">
-                3
-              </div>
-              <h3 className="font-bold text-foreground font-display">
-                Obtenez vos Résultats
-              </h3>
+              <div className="text-4xl">📊</div>
+              <h3 className="font-bold font-display">3. Simulez</h3>
               <p className="text-sm text-muted-foreground">
-                Estimations précises basées sur l'algorithme d'apprentissage communautaire.
+                Obtenez des estimations précises basées sur des données réelles
               </p>
             </Card>
           </div>
@@ -184,7 +177,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-16">
+      <footer className="border-t border-border bg-card mt-20 pb-16 md:pb-6">
         <div className="container py-8 space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
@@ -199,8 +192,14 @@ export default function Home() {
               </Button>
             </div>
           </div>
+          <div className="flex justify-center">
+            <CompactDonationButton />
+          </div>
         </div>
       </footer>
+
+      {/* Sticky Bottom Ad (Mobile only) */}
+      <StickyBottomAd />
     </div>
   );
 }

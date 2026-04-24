@@ -8,6 +8,8 @@ import Link from "next/link";
 import { carService } from "@/services/carService";
 import { partWeightsService } from "@/services/partWeightsService";
 import { useToast } from "@/hooks/use-toast";
+import { HorizontalAd, SidebarAd } from "@/components/AdSense";
+import { DonationButtons } from "@/components/DonationButtons";
 
 type Rarity = "Stock" | "Gris" | "Singulière" | "Rare" | "Épique" | "Légendaire";
 
@@ -145,141 +147,150 @@ export default function Simulateur() {
         </div>
       </header>
 
-      <main className="container py-8 space-y-6 max-w-4xl">
-        {/* Configuration Card */}
-        <Card className="p-6 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Calculator className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold font-display">Configuration</h2>
-              <p className="text-sm text-muted-foreground">
-                Sélectionnez votre véhicule et vos pièces
-              </p>
-            </div>
-          </div>
-
-          {/* Vehicle Selection */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Marque</label>
-              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir une marque" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands.map(brand => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Modèle</label>
-              <Select 
-                value={selectedModel?.id?.toString() || ""} 
-                onValueChange={(id) => setSelectedModel(models.find(m => m.id.toString() === id))}
-                disabled={!selectedBrand}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir un modèle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map(model => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Parts Grid */}
-          {selectedModel && (
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Pièces</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {PART_NAMES.map((name, index) => (
-                  <div key={name} className="space-y-1.5">
-                    <div className="text-xs font-medium text-muted-foreground">{name}</div>
-                    <Select 
-                      value={parts[index]} 
-                      onValueChange={(value: Rarity) => {
-                        const newParts = [...parts];
-                        newParts[index] = value;
-                        setParts(newParts);
-                      }}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RARITIES.map(rarity => (
-                          <SelectItem key={rarity} value={rarity}>
-                            {rarity}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+      <main className="container py-8 space-y-6 max-w-7xl">
+        <div className="grid lg:grid-cols-[1fr_300px] gap-6">
+          <div className="space-y-6">
+            {/* Configuration Card */}
+            <Card className="p-6 space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Calculator className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold font-display">Configuration</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Sélectionnez votre véhicule et vos pièces
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </Card>
 
-        {/* Results Card */}
-        {prices && (
-          <Card className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold font-display">Estimations</h2>
-                <p className="text-sm text-muted-foreground">
-                  Basées sur {String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations
-                </p>
-              </div>
-              <Badge variant={prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"}>
-                {prices.confidence === "high" ? "🟢 Haute" : prices.confidence === "medium" ? "🟡 Moyenne" : "🔴 Basse"}
-              </Badge>
-            </div>
+              {/* Vehicle Selection */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Marque</label>
+                  <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir une marque" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands.map(brand => (
+                        <SelectItem key={brand} value={brand}>
+                          {brand}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: "Prix Min", value: prices.min, color: "text-green-600" },
-                { label: "Prix Reco", value: prices.reco, color: "text-blue-600" },
-                { label: "Prix Max", value: prices.max, color: "text-purple-600" },
-                { label: "Prix x2", value: prices.x2, color: "text-orange-600" },
-              ].map(({ label, value, color }) => (
-                <Card key={label} className="p-4 space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">{label}</div>
-                  <div className={`text-2xl font-bold font-display ${color}`}>
-                    {formatPrice(value)}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => copyToClipboard(value)}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Modèle</label>
+                  <Select 
+                    value={selectedModel?.id?.toString() || ""} 
+                    onValueChange={(id) => setSelectedModel(models.find(m => m.id.toString() === id))}
+                    disabled={!selectedBrand}
                   >
-                    <Copy className="w-3 h-3 mr-1" />
-                    Copier
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          </Card>
-        )}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un modèle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.map(model => (
+                        <SelectItem key={model.id} value={model.id.toString()}>
+                          {model.model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-        {!selectedModel && (
-          <Card className="p-8 text-center text-muted-foreground">
-            Sélectionnez une marque et un modèle pour commencer
-          </Card>
-        )}
+              {/* Parts Grid */}
+              {selectedModel && (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Pièces</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {PART_NAMES.map((name, index) => (
+                      <div key={name} className="space-y-1.5">
+                        <div className="text-xs font-medium text-muted-foreground">{name}</div>
+                        <Select 
+                          value={parts[index]} 
+                          onValueChange={(value: Rarity) => {
+                            const newParts = [...parts];
+                            newParts[index] = value;
+                            setParts(newParts);
+                          }}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {RARITIES.map(rarity => (
+                              <SelectItem key={rarity} value={rarity}>
+                                {rarity}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Ad between form and results */}
+            {prices && <HorizontalAd />}
+
+            {/* Results Card */}
+            {prices && (
+              <Card className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold font-display">Estimations</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Basées sur {String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations
+                    </p>
+                  </div>
+                  <Badge variant={prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"}>
+                    {prices.confidence === "high" ? "🟢 Haute" : prices.confidence === "medium" ? "🟡 Moyenne" : "🔴 Basse"}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: "Prix Min", value: prices.min, color: "text-green-600" },
+                    { label: "Prix Reco", value: prices.reco, color: "text-blue-600" },
+                    { label: "Prix Max", value: prices.max, color: "text-purple-600" },
+                    { label: "Prix x2", value: prices.x2, color: "text-orange-600" },
+                  ].map(({ label, value, color }) => (
+                    <Card key={label} className="p-4 space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+                      <div className={`text-2xl font-bold font-display ${color}`}>
+                        {formatPrice(value)}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => copyToClipboard(value)}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copier
+                      </Button>
+                    </Card>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Donation prompt after results */}
+            {prices && (
+              <DonationButtons showProgressBar />
+            )}
+          </div>
+
+          {/* Sidebar Ad (Desktop) */}
+          <SidebarAd />
+        </div>
       </main>
     </div>
   );
