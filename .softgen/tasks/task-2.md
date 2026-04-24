@@ -13,12 +13,12 @@ position: 2
 Visual foundation — colors, fonts, component tokens. Automotive-inspired design with racing orange accents, card-based layouts, mobile-first approach.
 
 ## Checklist
-- [ ] Import Chakra Petch (700) and Inter (400, 600) from Google Fonts
-- [ ] Configure CSS variables in globals.css (navy, orange, pearl white palette)
-- [ ] Update tailwind.config.ts with custom colors and fonts
-- [ ] Create rarity badge components (color-coded: Gris=gray, Singulière=green, Rare=blue, Épique=purple, Légendaire=yellow)
-- [ ] Create card components with subtle elevation
-- [ ] Build responsive navigation header
+- [x] Import Chakra Petch (700) and Inter (400, 600) from Google Fonts
+- [x] Configure CSS variables in globals.css (navy, orange, pearl white palette)
+- [x] Update tailwind.config.ts with custom colors and fonts
+- [x] Create rarity badge components (color-coded: Gris=gray, Singulière=green, Rare=blue, Épique=purple, Légendaire=yellow)
+- [x] Create card components with subtle elevation
+- [x] Build responsive navigation header
 
 ## Acceptance
 - Fonts load correctly on all pages

@@ -10,6 +10,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Chakra Petch', 'system-ui', 'sans-serif'],
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -60,6 +64,13 @@ const config: Config = {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        rarity: {
+          gris: "hsl(var(--rarity-gris))",
+          singuliere: "hsl(var(--rarity-singuliere))",
+          rare: "hsl(var(--rarity-rare))",
+          epique: "hsl(var(--rarity-epique))",
+          legendaire: "hsl(var(--rarity-legendaire))",
         },
       },
       borderRadius: {
