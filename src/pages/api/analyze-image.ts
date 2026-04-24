@@ -74,6 +74,8 @@ export default async function handler(
       });
     }
 
+    console.log("Calling OpenAI API with model gpt-4o...");
+
     // Call OpenAI GPT-4 Vision API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -133,17 +135,26 @@ Return ONLY valid JSON, no other text.`
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
-      throw new Error("OpenAI API request failed");
+      const errorData = await response.json().catch(() => null);
+      console.error("OpenAI API error:", response.status, errorData);
+      
+      // Return a user-friendly error
+      return res.status(response.status).json({
+        success: false,
+        error: `OpenAI API error: ${response.status} - ${errorData?.error?.message || 'Unknown error'}`
+      });
     }
 
     const aiResponse = await response.json();
+    console.log("OpenAI API response received");
+    
     const extractedText = aiResponse.choices[0]?.message?.content;
 
     if (!extractedText) {
       throw new Error("No response from AI");
     }
+
+    console.log("AI extracted text:", extractedText);
 
     // Parse the AI response
     let parsedData;

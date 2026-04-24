@@ -48,12 +48,15 @@ export async function analyzeScreenshot(imageDataUrl: string): Promise<ImageAnal
     });
 
     if (!response.ok) {
-      throw new Error('Analysis API request failed');
+      const errorText = await response.text();
+      console.error('API Error Response:', response.status, errorText);
+      throw new Error(`Analysis API request failed: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
     
     if (!result.success || !result.data) {
+      console.error('Analysis failed:', result.error);
       throw new Error(result.error || 'Analysis failed');
     }
 
