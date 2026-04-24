@@ -1,7 +1,7 @@
 # Eco-Sim — Automotive Market Intelligence Platform
 
 ## Vision
-Transform tedious manual price tracking into an AI-powered system that learns from community data to provide the most accurate in-game automotive market predictions. Built for mobile-first screenshot uploads and real-time price simulation.
+Transform tedious manual price tracking into a data-driven system that learns from community observations to provide the most accurate in-game automotive market predictions. Built for manual data entry and real-time price simulation.
 
 **Current Database:** 28 brands, 100+ models, 100+ real observations training the learning algorithm.
 
@@ -18,12 +18,11 @@ Transform tedious manual price tracking into an AI-powered system that learns fr
 - Headings: Chakra Petch (700) — angular, automotive-inspired
 - Body: Inter (400, 600) — data readability
 
-**Style:** Card-based layouts, subtle elevation, color-coded rarity badges, mobile-first upload zones, real-time calculation displays
+**Style:** Card-based layouts, subtle elevation, color-coded rarity badges, clean form inputs, real-time calculation displays
 
 ## Features
-- **Image Analysis (OCR + AI)**: Drag-drop screenshot uploads, automatic text extraction (brand, model, reputation, price), visual rarity detection by border color (Phase 2)
-- **Validation Form**: Editable fields with 8-part rarity grid for user corrections before submission
+- **Manual Data Entry**: Simple form for entering vehicle characteristics (brand, model, reputation, price, parts rarity)
 - **Learning Engine**: Weighted average algorithm that refines part bonus values with each validated observation (currently trained on 100+ real observations)
 - **Price Simulator**: Cascading dropdowns (brand → model), 8 rarity selectors, real-time price estimates (Min/Max/Reco/x2)
 - **Confidence Indicators**: Display observation count and reliability metrics
-- **Monetization**: Google AdSense placement + PayPal/Buy Me a Coffee donation buttons (Phase 2)
+- **Monetization**: Google AdSense placement + PayPal/Buy Me a Coffee donation buttons

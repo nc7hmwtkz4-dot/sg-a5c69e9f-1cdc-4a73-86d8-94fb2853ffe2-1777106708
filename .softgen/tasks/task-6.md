@@ -1,6 +1,6 @@
 ---
 title: Simplifier le projet - Retirer l'OCR
-status: in_progress
+status: done
 priority: high
 type: feature
 tags: [refactoring, simplification]
@@ -24,9 +24,9 @@ L'utilisateur souhaite simplifier le projet en retirant complètement la fonctio
 - [x] Supprimer l'API route analyze-image
 - [x] Supprimer le service imageAnalysisService
 - [x] Simplifier upload.tsx en formulaire de saisie simple
-- [ ] Mettre à jour index.tsx (retirer référence OCR)
-- [ ] Mettre à jour project.md
-- [ ] Vérifier les erreurs
+- [x] Mettre à jour index.tsx (retirer référence OCR)
+- [x] Mettre à jour project.md
+- [x] Vérifier les erreurs
 
 ## Acceptance
 - Le projet démarre sans erreurs

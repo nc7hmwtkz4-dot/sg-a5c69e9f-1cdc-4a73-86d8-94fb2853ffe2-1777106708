@@ -17,12 +17,10 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Get car count
         const { count: carCount } = await supabase
           .from("cars")
           .select("*", { count: "exact", head: true });
 
-        // Get observation count
         const { count: observationCount } = await supabase
           .from("observations")
           .select("*", { count: "exact", head: true });
@@ -63,7 +61,7 @@ export default function Home() {
             Prix Précis, Données Communautaires
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Plateforme d'intelligence de marché alimentée par l'IA qui apprend de chaque observation pour fournir les estimations les plus précises.
+            Plateforme d'intelligence de marché qui apprend de chaque observation pour fournir les estimations les plus précises.
           </p>
         </section>
 
@@ -96,15 +94,15 @@ export default function Home() {
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-foreground font-display">
-                Analyser un Screenshot
+                Ajouter une Observation
               </h3>
               <p className="text-muted-foreground">
-                Envoyez une capture d'écran de votre véhicule pour contribuer aux données et améliorer la précision du système.
+                Saisissez manuellement les caractéristiques de votre véhicule pour contribuer aux données communautaires.
               </p>
             </div>
             <Link href="/upload">
               <Button className="w-full" variant="outline">
-                Télécharger une Image
+                Saisir une Observation
               </Button>
             </Link>
           </Card>
@@ -152,17 +150,17 @@ export default function Home() {
           <h2 className="text-2xl font-bold font-display">Comment ça marche ?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="p-6 space-y-3">
-              <div className="text-4xl">📸</div>
-              <h3 className="font-bold font-display">1. Capturez</h3>
+              <div className="text-4xl">📝</div>
+              <h3 className="font-bold font-display">1. Saisissez</h3>
               <p className="text-sm text-muted-foreground">
-                Prenez un screenshot de votre véhicule in-game
+                Renseignez les caractéristiques de votre véhicule
               </p>
             </Card>
             <Card className="p-6 space-y-3">
-              <div className="text-4xl">🤖</div>
-              <h3 className="font-bold font-display">2. Analysez</h3>
+              <div className="text-4xl">🔄</div>
+              <h3 className="font-bold font-display">2. Contribuez</h3>
               <p className="text-sm text-muted-foreground">
-                L'IA extrait automatiquement les données
+                Vos données enrichissent la base communautaire
               </p>
             </Card>
             <Card className="p-6 space-y-3">
