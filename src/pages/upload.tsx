@@ -101,11 +101,19 @@ export default function UploadPage() {
 
     setIsSubmitting(true);
     try {
-      await observationService.createObservation({
-        carId: selectedModel.id,
-        totalReputation: parseInt(reputation),
-        totalMinPrice: parseInt(priceMin),
-        parts: parts,
+      await observationService.submitObservation({
+        car_id: selectedModel.id,
+        rep_total: parseInt(reputation),
+        price_min_total: parseInt(priceMin),
+        engine_rarity: parts[0],
+        clutch_rarity: parts[1],
+        turbo1_rarity: parts[2],
+        turbo2_rarity: parts[3],
+        suspension1_rarity: parts[4],
+        suspension2_rarity: parts[5],
+        transmission_rarity: parts[6],
+        tires_rarity: parts[7],
+        base_price_min: selectedModel.base_price_min || 0
       });
 
       setShowSuccess(true);
