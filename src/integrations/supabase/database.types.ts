@@ -45,7 +45,7 @@ export type Database = {
       cars: {
         Row: {
           base_price_min: number | null
-          base_reputation: number
+          base_reputation: number | null
           brand: string
           created_at: string | null
           id: number
@@ -54,7 +54,7 @@ export type Database = {
         }
         Insert: {
           base_price_min?: number | null
-          base_reputation: number
+          base_reputation?: number | null
           brand: string
           created_at?: string | null
           id?: number
@@ -63,7 +63,7 @@ export type Database = {
         }
         Update: {
           base_price_min?: number | null
-          base_reputation?: number
+          base_reputation?: number | null
           brand?: string
           created_at?: string | null
           id?: number
