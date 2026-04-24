@@ -1,6 +1,6 @@
 ---
 title: Dashboard & Navigation
-status: todo
+status: done
 priority: high
 type: feature
 tags: [ui, navigation]
@@ -13,12 +13,12 @@ position: 3
 Main entry point with two action zones: Simulator (top) and Upload (bottom). Mobile-first with clear CTAs.
 
 ## Checklist
-- [ ] Create Dashboard page at /
-- [ ] Build "Calculer un prix" zone with simulator preview card
-- [ ] Build "Analyser un Screenshot" zone with upload dropzone
-- [ ] Add navigation header with logo and menu
-- [ ] Create footer with donation buttons (PayPal, Buy Me a Coffee)
-- [ ] Add AdSense sticky bottom banner placeholder
+- [x] Create Dashboard page at /
+- [x] Build "Calculer un prix" zone with simulator preview card
+- [x] Build "Analyser un Screenshot" zone with upload dropzone
+- [x] Add navigation header with logo and menu
+- [x] Create footer with donation buttons (PayPal, Buy Me a Coffee)
+- [x] Add AdSense sticky bottom banner placeholder
 
 ## Acceptance
 - Dashboard displays both action zones clearly on mobile
