@@ -200,6 +200,9 @@ export default function UploadPage() {
                 <p className="text-sm text-muted-foreground">
                   ou cliquez pour parcourir vos fichiers
                 </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  ℹ️ L'analyse automatique OCR/IA sera disponible prochainement. Pour l'instant, vous devrez saisir les données manuellement après l'upload.
+                </p>
               </div>
               <input
                 type="file"
@@ -243,7 +246,10 @@ export default function UploadPage() {
               <div>
                 <h2 className="text-xl font-bold font-display mb-2">Validation des données</h2>
                 <p className="text-sm text-muted-foreground">
-                  Remplissez ou corrigez les informations détectées
+                  Saisissez les informations visibles sur votre screenshot
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ Analyse manuelle requise - L'extraction automatique sera disponible prochainement
                 </p>
               </div>
 
