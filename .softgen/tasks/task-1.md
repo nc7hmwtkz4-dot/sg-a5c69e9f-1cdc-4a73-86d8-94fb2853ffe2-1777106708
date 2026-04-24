@@ -1,6 +1,6 @@
 ---
 title: Database Schema & Services
-status: in_progress
+status: done
 priority: urgent
 type: feature
 tags: [backend, database]
@@ -19,10 +19,10 @@ Foundation layer — database tables + TypeScript services for all data operatio
 - [x] Create observations table (validation history)
 - [x] Seed initial data (types, parts, reference cars)
 - [x] Enable RLS policies
-- [ ] Create carService.ts with getBrands, getModelsByBrand, getCarDetails
-- [ ] Create partWeightsService.ts with getRarityBonuses
-- [ ] Create observationService.ts with createObservation, getObservationCount
-- [ ] Create learningService.ts with updatePartWeights algorithm
+- [x] Create carService.ts with getBrands, getModelsByBrand, getCarDetails
+- [x] Create partWeightsService.ts with getRarityBonuses
+- [x] Create observationService.ts with createObservation, getObservationCount
+- [x] Create learningService.ts with updatePartWeights algorithm
 
 ## Acceptance
 - Dropdown menus populate with real database brands/models
