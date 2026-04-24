@@ -2,8 +2,43 @@ import { Calculator, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Home() {
+  const [stats, setStats] = useState({
+    carCount: 0,
+    observationCount: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Get car count
+        const { count: carCount } = await supabase
+          .from("cars")
+          .select("*", { count: "exact", head: true });
+
+        // Get observation count
+        const { count: observationCount } = await supabase
+          .from("observations")
+          .select("*", { count: "exact", head: true });
+
+        setStats({
+          carCount: carCount || 0,
+          observationCount: observationCount || 0,
+          loading: false
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        setStats(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -79,7 +114,7 @@ export default function Home() {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-3xl font-bold text-primary font-display">
-                  5
+                  {stats.loading ? "..." : stats.carCount}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Véhicules Référencés
@@ -87,7 +122,7 @@ export default function Home() {
               </div>
               <div>
                 <div className="text-3xl font-bold text-accent font-display">
-                  0
+                  {stats.loading ? "..." : stats.observationCount}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Observations Validées
