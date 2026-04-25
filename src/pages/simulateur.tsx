@@ -92,15 +92,17 @@ export default function Simulateur() {
       setPartWeights(weights);
       
       // Organize weights by type for easier lookup
+      // Use car_type_id directly from the database row
       const organizedByType: any = {};
       weightsByType.forEach((w: any) => {
-        const typeId = w.car_types?.id || w.car_type_id;
+        const typeId = w.car_type_id; // Use car_type_id directly, not nested object
         if (!organizedByType[typeId]) {
           organizedByType[typeId] = {};
         }
         organizedByType[typeId][w.part_rarity] = w;
       });
       
+      console.log("Organized weights by type:", organizedByType);
       setPartWeightsByType(organizedByType);
     } catch (error) {
       console.error("Error loading part weights:", error);
@@ -171,25 +173,37 @@ export default function Simulateur() {
     const carTypeId = selectedModel.type_id;
     const typeWeights = partWeightsByType[carTypeId] || {};
     
+    console.log("Car Type ID:", carTypeId);
+    console.log("Type-specific weights available:", typeWeights);
+    console.log("Part configuration:", parts);
+    
     let totalBonusRep = 0;
     let totalBonusPrice = 0;
     const observationCounts: { [key: string]: number } = {};
     let usedTypeSpecific = false;
 
-    parts.forEach((rarity) => {
+    parts.forEach((rarity, index) => {
       if (rarity !== "Stock") {
         // Try type-specific weights first
         if (typeWeights[rarity]) {
-          totalBonusRep += typeWeights[rarity].bonus_reputation_avg || 0;
-          totalBonusPrice += typeWeights[rarity].bonus_price_min_avg || 0;
+          const repBonus = typeWeights[rarity].bonus_reputation_avg || 0;
+          const priceBonus = typeWeights[rarity].bonus_price_min_avg || 0;
+          console.log(`Part ${index} (${rarity}): Using TYPE-SPECIFIC - Rep: +${repBonus}, Price: +${priceBonus}`);
+          totalBonusRep += repBonus;
+          totalBonusPrice += priceBonus;
           observationCounts[rarity] = typeWeights[rarity].observation_count || 0;
           usedTypeSpecific = true;
         } 
         // Fallback to global weights
         else if (partWeights[rarity]) {
+          const repBonus = partWeights[rarity].bonus_reputation_avg || 0;
+          const priceBonus = partWeights[rarity].bonus_price_min_avg || 0;
+          console.log(`Part ${index} (${rarity}): Using GLOBAL - Rep: +${repBonus}, Price: +${priceBonus}`);
           totalBonusRep += partWeights[rarity].bonus_reputation_avg || 0;
           totalBonusPrice += partWeights[rarity].bonus_price_min_avg || 0;
           observationCounts[rarity] = partWeights[rarity].observation_count || 0;
+        } else {
+          console.warn(`Part ${index} (${rarity}): NO WEIGHTS FOUND!`);
         }
       }
     });
@@ -203,6 +217,15 @@ export default function Simulateur() {
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
     const kMultiplier = carType?.k_multiplier_avg || 2.3;
     const priceX2 = priceMin + (totalRep * kMultiplier);
+    
+    console.log("ML Calculation Summary:");
+    console.log("- Base Price:", basePrice);
+    console.log("- Total Bonus Price:", totalBonusPrice);
+    console.log("- Final Price Min:", priceMin);
+    console.log("- Base Rep:", baseRep);
+    console.log("- Total Bonus Rep:", totalBonusRep);
+    console.log("- Final Rep:", totalRep);
+    console.log("- Used Type-Specific:", usedTypeSpecific);
 
     // Calculate confidence based on observation counts
     const counts = Object.values(observationCounts).filter(c => c > 0);
