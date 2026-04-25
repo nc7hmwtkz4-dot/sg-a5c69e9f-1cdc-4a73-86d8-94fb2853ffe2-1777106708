@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Calculator, ArrowLeft, Copy } from "lucide-react";
+import { Calculator, ArrowLeft, Copy, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { carService } from "@/services/carService";
 import { partWeightsService } from "@/services/partWeightsService";
+import { partWeightsByTypeService } from "@/services/partWeightsByTypeService";
 import { useToast } from "@/hooks/use-toast";
 import { HorizontalAd, SidebarAd } from "@/components/AdSense";
 import { DonationButtons } from "@/components/DonationButtons";
@@ -19,8 +20,8 @@ interface Prices {
   max: number;
   reco: number;
   x2: number;
-  confidence: "exact" | "high" | "medium" | "low";
-  kObservations: number;
+  confidence: "exact" | "high" | "medium" | "low" | "very-low";
+  observationDetails: string;
   isExactMatch?: boolean;
 }
 
@@ -45,6 +46,7 @@ export default function Simulateur() {
   const [parts, setParts] = useState<Rarity[]>(Array(8).fill("Stock"));
   const [prices, setPrices] = useState<Prices | null>(null);
   const [partWeights, setPartWeights] = useState<any>({});
+  const [partWeightsByType, setPartWeightsByType] = useState<any>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,8 +84,24 @@ export default function Simulateur() {
   const loadPartWeights = async () => {
     try {
       const weights = await partWeightsService.getAllWeights();
-      console.log("Loaded part weights:", weights);
+      const weightsByType = await partWeightsByTypeService.getAllWeightsByType();
+      
+      console.log("Loaded global part weights:", weights);
+      console.log("Loaded type-specific weights:", weightsByType);
+      
       setPartWeights(weights);
+      
+      // Organize weights by type for easier lookup
+      const organizedByType: any = {};
+      weightsByType.forEach((w: any) => {
+        const typeId = w.car_types?.id || w.car_type_id;
+        if (!organizedByType[typeId]) {
+          organizedByType[typeId] = {};
+        }
+        organizedByType[typeId][w.part_rarity] = w;
+      });
+      
+      setPartWeightsByType(organizedByType);
     } catch (error) {
       console.error("Error loading part weights:", error);
     }
@@ -132,20 +150,36 @@ export default function Simulateur() {
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
         confidence: "exact",
-        kObservations: 1,
+        observationDetails: "Configuration observée - Valeurs exactes",
         isExactMatch: true,
       });
       return;
     }
 
-    // Calculate using ML weights
+    // ML estimation - use type-specific weights when available
+    const carTypeId = selectedModel.type_id;
+    const typeWeights = partWeightsByType[carTypeId] || {};
+    
     let totalBonusRep = 0;
     let totalBonusPrice = 0;
+    const observationCounts: { [key: string]: number } = {};
+    let usedTypeSpecific = false;
 
     parts.forEach((rarity) => {
-      if (rarity !== "Stock" && partWeights[rarity]) {
-        totalBonusRep += partWeights[rarity].bonus_reputation_avg || 0;
-        totalBonusPrice += partWeights[rarity].bonus_price_min_avg || 0;
+      if (rarity !== "Stock") {
+        // Try type-specific weights first
+        if (typeWeights[rarity]) {
+          totalBonusRep += typeWeights[rarity].bonus_reputation_avg || 0;
+          totalBonusPrice += typeWeights[rarity].bonus_price_min_avg || 0;
+          observationCounts[rarity] = typeWeights[rarity].observation_count || 0;
+          usedTypeSpecific = true;
+        } 
+        // Fallback to global weights
+        else if (partWeights[rarity]) {
+          totalBonusRep += partWeights[rarity].bonus_reputation_avg || 0;
+          totalBonusPrice += partWeights[rarity].bonus_price_min_avg || 0;
+          observationCounts[rarity] = partWeights[rarity].observation_count || 0;
+        }
       }
     });
 
@@ -160,18 +194,56 @@ export default function Simulateur() {
     const kMultiplier = carType?.k_multiplier_avg || 2.3;
     const priceX2 = priceMin + (totalRep * kMultiplier);
 
-    const weightsArray = Object.values(partWeights) as any[];
-    const validWeights = weightsArray.filter(w => w && w.observation_count > 0);
-    const totalObs = validWeights.reduce((sum: number, w: any) => sum + (Number(w.observation_count) || 0), 0);
-    const avgObservations = weightsArray.length > 0 ? totalObs / weightsArray.length : 0;
+    // Calculate confidence based on observation counts
+    const counts = Object.values(observationCounts).filter(c => c > 0);
+    const minObservations = counts.length > 0 ? Math.min(...counts) : 0;
+    
+    let confidence: "exact" | "high" | "medium" | "low" | "very-low";
+    if (minObservations >= 10) {
+      confidence = "high";
+    } else if (minObservations >= 3) {
+      confidence = "medium";
+    } else if (minObservations >= 1) {
+      confidence = "low";
+    } else {
+      confidence = "very-low";
+    }
 
-    const confidence = avgObservations >= 3 ? "high" : avgObservations >= 1 ? "medium" : "low";
+    // Build observation details message
+    let observationDetails = "";
+    if (usedTypeSpecific) {
+      observationDetails = `Estimation ML (${carType?.name || "type spécifique"})`;
+    } else {
+      observationDetails = "Estimation ML (moyennes globales)";
+    }
 
-    console.log("Calculated prices:", {
+    const rarityLabels: { [key: string]: string } = {
+      "Gris": "Gris",
+      "Singuliere": "Singulières",
+      "Rare": "Rares",
+      "Epique": "Épiques",
+      "Legendaire": "Légendaires",
+      "Secrete": "Secrètes"
+    };
+
+    const obsDetails = Object.entries(observationCounts)
+      .filter(([_, count]) => count > 0)
+      .map(([rarity, count]) => `${count} obs ${rarityLabels[rarity] || rarity}`)
+      .join(" + ");
+
+    if (obsDetails) {
+      observationDetails += ` • ${obsDetails}`;
+    } else {
+      observationDetails += " • Pas d'observations pour ces pièces";
+    }
+
+    console.log("ML Estimation:", {
       min: priceMin,
       max: priceMax,
       reco: priceReco,
       x2: priceX2,
+      confidence,
+      observationCounts,
     });
 
     setPrices({
@@ -180,16 +252,16 @@ export default function Simulateur() {
       reco: Math.round(priceReco),
       x2: Math.round(priceX2),
       confidence,
-      kObservations: carType?.k_observation_count || 0,
+      observationDetails,
       isExactMatch: false,
     });
-  }, [selectedModel, parts, partWeights]);
+  }, [selectedModel, parts, partWeights, partWeightsByType]);
 
   useEffect(() => {
     if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
       calculatePrices();
     }
-  }, [selectedModel, parts, partWeights, calculatePrices]);
+  }, [selectedModel, parts, partWeights, partWeightsByType, calculatePrices]);
 
   const handlePartChange = (index: number, value: Rarity) => {
     const newParts = [...parts];
@@ -209,6 +281,43 @@ export default function Simulateur() {
     return price.toLocaleString("fr-FR");
   };
 
+  const getConfidenceBadge = (confidence: string) => {
+    switch (confidence) {
+      case "exact":
+        return (
+          <Badge className="bg-green-600 hover:bg-green-700">
+            ✓ Observation exacte
+          </Badge>
+        );
+      case "high":
+        return (
+          <Badge variant="default" className="bg-green-500">
+            🟢 Confiance haute
+          </Badge>
+        );
+      case "medium":
+        return (
+          <Badge variant="secondary" className="bg-yellow-500 text-white">
+            🟡 Confiance moyenne
+          </Badge>
+        );
+      case "low":
+        return (
+          <Badge variant="destructive" className="bg-orange-500">
+            🟠 Confiance basse
+          </Badge>
+        );
+      case "very-low":
+        return (
+          <Badge variant="destructive">
+            🔴 Confiance très basse
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -220,7 +329,7 @@ export default function Simulateur() {
             </Button>
           </Link>
           <h1 className="text-4xl font-bold font-display mb-2">Simulateur de Prix</h1>
-          <p className="text-muted-foreground">Estimation en temps réel</p>
+          <p className="text-muted-foreground">Estimation en temps réel basée sur {Object.keys(partWeights).length > 0 ? "88+ observations réelles" : "..."}</p>
         </div>
 
         <div className="grid lg:grid-cols-[1fr_300px] gap-6">
@@ -303,35 +412,15 @@ export default function Simulateur() {
 
             {prices && (
               <Card className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold font-display">Estimations</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {prices.isExactMatch
-                        ? "Configuration observée - Valeurs exactes"
-                        : `Basées sur les observations (Prix x2: ${prices.kObservations} obs)`}
-                    </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold font-display mb-2">Estimations</h2>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Info className="h-4 w-4 flex-shrink-0" />
+                      <p>{prices.observationDetails}</p>
+                    </div>
                   </div>
-                  <Badge
-                    variant={
-                      prices.confidence === "exact"
-                        ? "default"
-                        : prices.confidence === "high"
-                        ? "default"
-                        : prices.confidence === "medium"
-                        ? "secondary"
-                        : "destructive"
-                    }
-                    className={prices.confidence === "exact" ? "bg-green-600" : ""}
-                  >
-                    {prices.confidence === "exact"
-                      ? "✓ Observation exacte"
-                      : prices.confidence === "high"
-                      ? "🟢 Haute"
-                      : prices.confidence === "medium"
-                      ? "🟡 Moyenne"
-                      : "🔴 Basse"}
-                  </Badge>
+                  {getConfidenceBadge(prices.confidence)}
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
