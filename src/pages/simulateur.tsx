@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calculator, ArrowLeft } from "lucide-react";
+import { Calculator, ArrowLeft, Copy } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ const PART_NAMES = [
   "Pneus"
 ];
 
-const RARITIES: Rarity[] = ["Stock", "Gris", "Singulière", "Rare", "Épique", "Légendaire"];
+const RARITIES: Rarity[] = ["Stock", "Gris", "Singuliere", "Rare", "Epique", "Legendaire", "Secrete"];
 
 export default function Simulateur() {
   const [brands, setBrands] = useState<string[]>([]);
