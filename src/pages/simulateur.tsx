@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Calculator, ArrowLeft, Copy } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -82,7 +82,7 @@ export default function Simulateur() {
     setParts(Array(8).fill("Stock"));
   };
 
-  const loadPartWeightsForCarType = async () => {
+  const loadPartWeightsForCarType = useCallback(async () => {
     if (!selectedModel?.car_types?.id) {
       console.log("No car type ID found");
       return;
@@ -140,9 +140,9 @@ export default function Simulateur() {
       const globalWeights = await partWeightsService.getAllWeights();
       setPartWeights(globalWeights);
     }
-  };
+  }, [selectedModel]);
 
-  const calculatePrices = async () => {
+  const calculatePrices = useCallback(async () => {
     console.log("calculatePrices called");
     console.log("selectedModel:", selectedModel);
     console.log("partWeights:", partWeights);
@@ -243,7 +243,7 @@ export default function Simulateur() {
 
     console.log("Setting calculated prices:", result);
     setPrices(result);
-  };
+  }, [selectedModel, parts, partWeights]);
 
   const getConfidence = (weights: any): "high" | "medium" | "low" => {
     // Check if we're using type-specific weights with real observations
