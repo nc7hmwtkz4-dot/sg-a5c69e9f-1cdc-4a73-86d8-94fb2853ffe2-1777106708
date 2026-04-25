@@ -41,6 +41,7 @@ export default function UploadPage() {
   const [selectedModel, setSelectedModel] = useState<any>(null);
   const [reputation, setReputation] = useState<string>("");
   const [priceMin, setPriceMin] = useState<string>("");
+  const [priceX2, setPriceX2] = useState<string>("");
   const [parts, setParts] = useState<Rarity[]>(Array(8).fill("Stock"));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -89,10 +90,10 @@ export default function UploadPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedModel || !reputation || !priceMin) {
+    if (!selectedModel || !reputation || !priceMin || !priceX2) {
       toast({
         title: "Données manquantes",
-        description: "Veuillez remplir tous les champs obligatoires",
+        description: "Veuillez remplir tous les champs obligatoires (y compris Prix x2)",
         variant: "destructive",
       });
       return;
@@ -104,6 +105,7 @@ export default function UploadPage() {
         car_id: selectedModel.id,
         rep_total: parseInt(reputation),
         price_min_total: parseInt(priceMin),
+        price_x2: parseInt(priceX2),
         engine_rarity: parts[0],
         clutch_rarity: parts[1],
         turbo1_rarity: parts[2],
@@ -126,6 +128,7 @@ export default function UploadPage() {
         setSelectedModel(null);
         setReputation("");
         setPriceMin("");
+        setPriceX2("");
         setParts(Array(8).fill("Stock"));
         setShowSuccess(false);
       }, 2000);
@@ -249,6 +252,19 @@ export default function UploadPage() {
                 onChange={(e) => setPriceMin(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Prix x2 *</Label>
+            <Input
+              type="number"
+              placeholder="Ex: 26000000"
+              value={priceX2}
+              onChange={(e) => setPriceX2(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Le prix affiché dans le jeu avec le multiplicateur x2 activé
+            </p>
           </div>
 
           <div className="space-y-3">
