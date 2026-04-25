@@ -1,4 +1,4 @@
-import { Calculator, Upload } from "lucide-react";
+import { Calculator, Upload, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
