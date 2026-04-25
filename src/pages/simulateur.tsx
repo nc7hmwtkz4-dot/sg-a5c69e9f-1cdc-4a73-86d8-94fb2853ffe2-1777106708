@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { carService } from "@/services/carService";
-import { partWeightsByTypeService } from "@/services/partWeightsByTypeService";
 import { partWeightsService } from "@/services/partWeightsService";
 import { useToast } from "@/hooks/use-toast";
 import { HorizontalAd, SidebarAd } from "@/components/AdSense";
@@ -44,12 +43,13 @@ export default function Simulateur() {
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<any>(null);
   const [parts, setParts] = useState<Rarity[]>(Array(8).fill("Stock"));
-  const [prices, setPrices] = useState<any>(null);
+  const [prices, setPrices] = useState<Prices | null>(null);
   const [partWeights, setPartWeights] = useState<any>({});
   const { toast } = useToast();
 
   useEffect(() => {
     loadBrands();
+    loadPartWeights();
   }, []);
 
   useEffect(() => {
@@ -58,104 +58,52 @@ export default function Simulateur() {
     }
   }, [selectedBrand]);
 
-  useEffect(() => {
-    if (selectedModel) {
-      loadPartWeightsForCarType();
-    }
-  }, [selectedModel]);
-
-  useEffect(() => {
-    if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
-      calculatePrices();
-    }
-  }, [selectedModel, parts, partWeights]);
-
   const loadBrands = async () => {
-    const data = await carService.getBrands();
-    setBrands(data);
+    try {
+      const data = await carService.getBrands();
+      setBrands(data);
+    } catch (error) {
+      console.error("Error loading brands:", error);
+    }
   };
 
   const loadModels = async (brand: string) => {
-    const data = await carService.getModelsByBrand(brand);
-    setModels(data);
-    setSelectedModel(null);
-    setParts(Array(8).fill("Stock"));
+    try {
+      const data = await carService.getModelsByBrand(brand);
+      setModels(data);
+      setSelectedModel(null);
+      setParts(Array(8).fill("Stock"));
+      setPrices(null);
+    } catch (error) {
+      console.error("Error loading models:", error);
+    }
   };
 
-  const loadPartWeightsForCarType = useCallback(async () => {
-    if (!selectedModel?.car_types?.id) {
-      console.log("No car type ID found");
-      return;
-    }
-    
-    console.log("Loading weights for car type:", selectedModel.car_types.name, selectedModel.car_types.id);
-    
+  const loadPartWeights = async () => {
     try {
-      // Try to get weights specific to this car type
-      const typeSpecificWeights = await partWeightsByTypeService.getWeightsByCarType(
-        selectedModel.car_types.id
-      );
-      
-      console.log("Type-specific weights loaded:", typeSpecificWeights);
-      
-      // Check if we have real data
-      const hasRealData = Object.values(typeSpecificWeights).some(
-        (w: any) => w && w.observation_count > 0
-      );
-      
-      console.log("Has real data:", hasRealData);
-      
-      if (hasRealData) {
-        // Use type-specific weights, falling back to global for missing rarities
-        const globalWeights = await partWeightsService.getAllWeights();
-        const mergedWeights: any = {};
-        
-        RARITIES.forEach(rarity => {
-          if (rarity === "Stock") return;
-          
-          if (typeSpecificWeights[rarity] && typeSpecificWeights[rarity].observation_count > 0) {
-            // Use type-specific weight (real data)
-            mergedWeights[rarity] = typeSpecificWeights[rarity];
-          } else if (typeSpecificWeights[rarity]) {
-            // Use type-specific fallback (global average)
-            mergedWeights[rarity] = typeSpecificWeights[rarity];
-          } else if (globalWeights[rarity]) {
-            // Last resort: global weights
-            mergedWeights[rarity] = globalWeights[rarity];
-          }
-        });
-        
-        console.log("Merged weights:", mergedWeights);
-        setPartWeights(mergedWeights);
-      } else {
-        // No type-specific data, use global weights
-        console.log("Using global weights");
-        const globalWeights = await partWeightsService.getAllWeights();
-        console.log("Global weights:", globalWeights);
-        setPartWeights(globalWeights);
-      }
+      const weights = await partWeightsService.getAllWeights();
+      console.log("Loaded part weights:", weights);
+      setPartWeights(weights);
     } catch (error) {
-      console.error("Error loading weights:", error);
-      // Fallback to global weights on error
-      const globalWeights = await partWeightsService.getAllWeights();
-      setPartWeights(globalWeights);
+      console.error("Error loading part weights:", error);
     }
-  }, [selectedModel]);
+  };
 
   const calculatePrices = useCallback(async () => {
-    console.log("calculatePrices called");
-    console.log("selectedModel:", selectedModel);
-    console.log("partWeights:", partWeights);
-    console.log("parts:", parts);
-    
-    if (!selectedModel || !partWeights || Object.keys(partWeights).length === 0) {
-      console.log("Missing data, cannot calculate");
+    if (!selectedModel) {
+      console.log("No model selected");
       return;
     }
 
-    console.log("Checking for exact match...");
+    if (!partWeights || Object.keys(partWeights).length === 0) {
+      console.log("No part weights loaded");
+      return;
+    }
 
-    // FIRST: Check if this exact configuration exists in observations
+    console.log("Calculating prices for:", selectedModel.model);
+    console.log("Parts configuration:", parts);
+
+    // Check for exact observation match
     const { data: exactMatch } = await supabase
       .from("observations")
       .select("*")
@@ -170,158 +118,133 @@ export default function Simulateur() {
       .eq("tires_rarity", parts[7])
       .maybeSingle();
 
-    console.log("Exact match result:", exactMatch);
-
-    // If exact match found, use observed values (100% confidence)
     if (exactMatch && exactMatch.price_min_total) {
-      console.log("Found exact match!");
+      console.log("Found exact observation match!");
       const carType = selectedModel.car_types;
       const priceMin = exactMatch.price_min_total;
       const priceMax = priceMin + (carType?.gap_max_min || 0);
       const priceReco = priceMin + (carType?.gap_reco_min || 0);
       const priceX2 = exactMatch.price_x2 || (priceMin + (exactMatch.rep_total * (carType?.k_multiplier_avg || 2.3)));
 
-      const result = {
+      setPrices({
         min: Math.round(priceMin),
         max: Math.round(priceMax),
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
-        confidence: "exact" as const,
+        confidence: "exact",
         kObservations: 1,
         isExactMatch: true,
-      };
-      
-      console.log("Setting exact match prices:", result);
-      setPrices(result);
+      });
       return;
     }
 
-    console.log("No exact match, calculating from ML...");
-
-    // Otherwise, calculate using ML algorithm
+    // Calculate using ML weights
     let totalBonusRep = 0;
     let totalBonusPrice = 0;
 
-    parts.forEach((rarity, index) => {
+    parts.forEach((rarity) => {
       if (rarity !== "Stock" && partWeights[rarity]) {
-        const repBonus = partWeights[rarity].bonus_reputation_avg || 0;
-        const priceBonus = partWeights[rarity].bonus_price_min_avg || 0;
-        console.log(`Part ${index} (${rarity}): +${repBonus} rep, +${priceBonus} price`);
-        totalBonusRep += repBonus;
-        totalBonusPrice += priceBonus;
+        totalBonusRep += partWeights[rarity].bonus_reputation_avg || 0;
+        totalBonusPrice += partWeights[rarity].bonus_price_min_avg || 0;
       }
     });
-
-    console.log("Total bonuses - Rep:", totalBonusRep, "Price:", totalBonusPrice);
 
     const basePrice = selectedModel.base_price_min || 0;
     const baseRep = selectedModel.base_reputation || 0;
     const carType = selectedModel.car_types;
 
-    console.log("Base values - Price:", basePrice, "Rep:", baseRep);
-
     const priceMin = basePrice + totalBonusPrice;
     const totalRep = baseRep + totalBonusRep;
-
     const priceMax = priceMin + (carType?.gap_max_min || 0);
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
-    
     const kMultiplier = carType?.k_multiplier_avg || 2.3;
     const priceX2 = priceMin + (totalRep * kMultiplier);
 
-    console.log("K multiplier:", kMultiplier);
+    const avgObservations = Object.values(partWeights)
+      .filter((w: any) => w.observation_count > 0)
+      .reduce((sum: number, w: any) => sum + w.observation_count, 0) / 
+      Object.keys(partWeights).length;
 
-    const result = {
+    const confidence = avgObservations >= 3 ? "high" : avgObservations >= 1 ? "medium" : "low";
+
+    console.log("Calculated prices:", {
+      min: priceMin,
+      max: priceMax,
+      reco: priceReco,
+      x2: priceX2,
+    });
+
+    setPrices({
       min: Math.round(priceMin),
       max: Math.round(priceMax),
       reco: Math.round(priceReco),
       x2: Math.round(priceX2),
-      confidence: getConfidence(partWeights),
+      confidence,
       kObservations: carType?.k_observation_count || 0,
       isExactMatch: false,
-    };
-
-    console.log("Setting calculated prices:", result);
-    setPrices(result);
+    });
   }, [selectedModel, parts, partWeights]);
 
-  const getConfidence = (weights: any): "high" | "medium" | "low" => {
-    // Check if we're using type-specific weights with real observations
-    const typeSpecificObs = Object.values(weights)
-      .filter((w: any) => w.observation_count > 0)
-      .map((w: any) => w.observation_count);
-    
-    if (typeSpecificObs.length > 0) {
-      const avgCount = typeSpecificObs.reduce((a: number, b: number) => a + b, 0) / typeSpecificObs.length;
-      if (avgCount >= 3) return "high";
-      if (avgCount >= 1) return "medium";
+  useEffect(() => {
+    if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
+      calculatePrices();
     }
-    
-    // Using global weights or fallback
-    return "low";
+  }, [selectedModel, parts, partWeights, calculatePrices]);
+
+  const handlePartChange = (index: number, value: Rarity) => {
+    const newParts = [...parts];
+    newParts[index] = value;
+    setParts(newParts);
   };
 
-  const copyToClipboard = (value: number) => {
-    navigator.clipboard.writeText(value.toLocaleString("fr-FR"));
+  const copyPrice = (price: number) => {
+    navigator.clipboard.writeText(price.toLocaleString("fr-FR"));
     toast({
-      title: "Copié !",
-      description: `${value.toLocaleString("fr-FR")} copié dans le presse-papiers`,
+      title: "Prix copié !",
+      description: `${price.toLocaleString("fr-FR")} € copié dans le presse-papiers`,
     });
   };
 
-  const formatPrice = (value: number) => {
-    return value.toLocaleString("fr-FR");
+  const formatPrice = (price: number) => {
+    return price.toLocaleString("fr-FR");
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card shadow-sm">
-        <div className="container py-4 flex items-center gap-4">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
           <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Retour
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-primary font-display">
-              Simulateur de Prix
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Estimation en temps réel
-            </p>
-          </div>
+          <h1 className="text-4xl font-bold font-display mb-2">Simulateur de Prix</h1>
+          <p className="text-muted-foreground">Estimation en temps réel</p>
         </div>
-      </header>
 
-      <main className="container py-8 space-y-6 max-w-7xl">
         <div className="grid lg:grid-cols-[1fr_300px] gap-6">
           <div className="space-y-6">
-            {/* Configuration Card */}
-            <Card className="p-6 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Calculator className="w-5 h-5 text-primary" />
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Calculator className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold font-display">Configuration</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Sélectionnez votre véhicule et vos pièces
-                  </p>
+                  <p className="text-sm text-muted-foreground">Sélectionnez votre véhicule et vos pièces</p>
                 </div>
               </div>
 
-              {/* Vehicle Selection */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Marque</label>
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Marque</label>
                   <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choisir une marque" />
+                      <SelectValue placeholder="Sélectionnez une marque" />
                     </SelectTrigger>
                     <SelectContent>
-                      {brands.map(brand => (
+                      {brands.map((brand) => (
                         <SelectItem key={brand} value={brand}>
                           {brand}
                         </SelectItem>
@@ -330,18 +253,21 @@ export default function Simulateur() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Modèle</label>
-                  <Select 
-                    value={selectedModel?.id?.toString() || ""} 
-                    onValueChange={(id) => setSelectedModel(models.find(m => m.id.toString() === id))}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Modèle</label>
+                  <Select
+                    value={selectedModel?.id?.toString()}
+                    onValueChange={(value) => {
+                      const model = models.find((m) => m.id.toString() === value);
+                      setSelectedModel(model);
+                    }}
                     disabled={!selectedBrand}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Choisir un modèle" />
+                      <SelectValue placeholder="Sélectionnez un modèle" />
                     </SelectTrigger>
                     <SelectContent>
-                      {models.map(model => (
+                      {models.map((model) => (
                         <SelectItem key={model.id} value={model.id.toString()}>
                           {model.model}
                         </SelectItem>
@@ -351,98 +277,135 @@ export default function Simulateur() {
                 </div>
               </div>
 
-              {/* Parts Grid */}
-              {selectedModel && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Pièces</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {PART_NAMES.map((name, index) => (
-                      <div key={name} className="space-y-1.5">
-                        <div className="text-xs font-medium text-muted-foreground">{name}</div>
-                        <Select 
-                          value={parts[index]} 
-                          onValueChange={(value: Rarity) => {
-                            const newParts = [...parts];
-                            newParts[index] = value;
-                            setParts(newParts);
-                          }}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {RARITIES.map(rarity => (
-                              <SelectItem key={rarity} value={rarity}>
-                                {rarity}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
+              <div>
+                <h3 className="font-medium mb-4">Pièces</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {PART_NAMES.map((partName, index) => (
+                    <div key={index}>
+                      <label className="block text-sm font-medium mb-2">{partName}</label>
+                      <Select value={parts[index]} onValueChange={(value) => handlePartChange(index, value as Rarity)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RARITIES.map((rarity) => (
+                            <SelectItem key={rarity} value={rarity}>
+                              {rarity}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </Card>
 
-            {/* Ad between form and results - HIDDEN (change false to true to show) */}
-            {false && prices && <HorizontalAd />}
-
-            {/* Results Card */}
             {prices && (
               <Card className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold font-display">Estimations</h2>
                     <p className="text-sm text-muted-foreground">
-                      {prices.isExactMatch 
-                        ? "Configuration observée - Valeurs exactes" 
-                        : `Modèle ${selectedModel?.car_types?.name || 'global'} - ${prices.kObservations} obs pour Prix x2`
-                      }
+                      {prices.isExactMatch
+                        ? "Configuration observée - Valeurs exactes"
+                        : `Basées sur les observations (Prix x2: ${prices.kObservations} obs)`}
                     </p>
                   </div>
-                  <Badge variant={prices.confidence === "exact" ? "default" : prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"} className={prices.confidence === "exact" ? "bg-green-600" : ""}>
-                    {prices.confidence === "exact" ? "✓ Observation exacte" : prices.confidence === "high" ? "🟢 Haute" : prices.confidence === "medium" ? "🟡 Moyenne" : "🔴 Basse"}
+                  <Badge
+                    variant={
+                      prices.confidence === "exact"
+                        ? "default"
+                        : prices.confidence === "high"
+                        ? "default"
+                        : prices.confidence === "medium"
+                        ? "secondary"
+                        : "destructive"
+                    }
+                    className={prices.confidence === "exact" ? "bg-green-600" : ""}
+                  >
+                    {prices.confidence === "exact"
+                      ? "✓ Observation exacte"
+                      : prices.confidence === "high"
+                      ? "🟢 Haute"
+                      : prices.confidence === "medium"
+                      ? "🟡 Moyenne"
+                      : "🔴 Basse"}
                   </Badge>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: "Prix Min", value: prices.min, color: "text-green-600" },
-                    { label: "Prix Reco", value: prices.reco, color: "text-blue-600" },
-                    { label: "Prix Max", value: prices.max, color: "text-purple-600" },
-                    { label: "Prix x2", value: prices.x2, color: "text-orange-600" },
-                  ].map(({ label, value, color }) => (
-                    <Card key={label} className="p-4 space-y-2">
-                      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-                      <div className={`text-2xl font-bold font-display ${color}`}>
-                        {formatPrice(value)}
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => copyToClipboard(value)}
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        Copier
-                      </Button>
-                    </Card>
-                  ))}
+                  <Card className="p-4 border-2 border-green-500/20 bg-green-500/5">
+                    <p className="text-sm text-muted-foreground mb-1">Prix Min</p>
+                    <p className="text-2xl font-bold text-green-600">{formatPrice(prices.min)}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyPrice(prices.min)}
+                      className="mt-2 w-full"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copier
+                    </Button>
+                  </Card>
+
+                  <Card className="p-4 border-2 border-blue-500/20 bg-blue-500/5">
+                    <p className="text-sm text-muted-foreground mb-1">Prix Reco</p>
+                    <p className="text-2xl font-bold text-blue-600">{formatPrice(prices.reco)}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyPrice(prices.reco)}
+                      className="mt-2 w-full"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copier
+                    </Button>
+                  </Card>
+
+                  <Card className="p-4 border-2 border-purple-500/20 bg-purple-500/5">
+                    <p className="text-sm text-muted-foreground mb-1">Prix Max</p>
+                    <p className="text-2xl font-bold text-purple-600">{formatPrice(prices.max)}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyPrice(prices.max)}
+                      className="mt-2 w-full"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copier
+                    </Button>
+                  </Card>
+
+                  <Card className="p-4 border-2 border-orange-500/20 bg-orange-500/5">
+                    <p className="text-sm text-muted-foreground mb-1">Prix x2</p>
+                    <p className="text-2xl font-bold text-orange-600">{formatPrice(prices.x2)}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyPrice(prices.x2)}
+                      className="mt-2 w-full"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copier
+                    </Button>
+                  </Card>
                 </div>
+
+                <HorizontalAd />
               </Card>
             )}
 
-            {/* Donation prompt - HIDDEN (change false to true to show) */}
-            {false && prices && (
-              <DonationButtons showProgressBar />
-            )}
+            <DonationButtons />
           </div>
 
-          {/* Sidebar Ad - HIDDEN (change false to true to show) */}
-          {false && <SidebarAd />}
+          <div className="hidden lg:block">
+            <div className="sticky top-4">
+              <SidebarAd />
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
