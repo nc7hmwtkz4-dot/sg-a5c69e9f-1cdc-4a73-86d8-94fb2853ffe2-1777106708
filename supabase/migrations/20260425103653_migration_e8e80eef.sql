@@ -1,0 +1,5 @@
+-- NETTOYAGE COMPLET - Supprimer toutes les données existantes
+DROP TABLE IF EXISTS observations CASCADE;
+DROP TABLE IF EXISTS cars CASCADE;
+DROP TABLE IF EXISTS car_types CASCADE;
+DROP TABLE IF EXISTS part_weights CASCADE;

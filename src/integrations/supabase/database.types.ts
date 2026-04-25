@@ -17,26 +17,23 @@ export type Database = {
     Tables: {
       car_types: {
         Row: {
-          base_ratio: number
-          created_at: string | null
-          gap_max_min: number
-          gap_reco_min: number
+          base_ratio: number | null
+          gap_max_min: number | null
+          gap_reco_min: number | null
           id: number
           name: string
         }
         Insert: {
-          base_ratio: number
-          created_at?: string | null
-          gap_max_min: number
-          gap_reco_min: number
+          base_ratio?: number | null
+          gap_max_min?: number | null
+          gap_reco_min?: number | null
           id?: number
           name: string
         }
         Update: {
-          base_ratio?: number
-          created_at?: string | null
-          gap_max_min?: number
-          gap_reco_min?: number
+          base_ratio?: number | null
+          gap_max_min?: number | null
+          gap_reco_min?: number | null
           id?: number
           name?: string
         }
@@ -95,7 +92,7 @@ export type Database = {
           transmission_rarity: string | null
           turbo1_rarity: string | null
           turbo2_rarity: string | null
-          user_id: string | null
+          user_id: number | null
         }
         Insert: {
           car_id?: number | null
@@ -111,7 +108,7 @@ export type Database = {
           transmission_rarity?: string | null
           turbo1_rarity?: string | null
           turbo2_rarity?: string | null
-          user_id?: string | null
+          user_id?: number | null
         }
         Update: {
           car_id?: number | null
@@ -127,7 +124,7 @@ export type Database = {
           transmission_rarity?: string | null
           turbo1_rarity?: string | null
           turbo2_rarity?: string | null
-          user_id?: string | null
+          user_id?: number | null
         }
         Relationships: [
           {
@@ -141,25 +138,22 @@ export type Database = {
       }
       part_weights: {
         Row: {
-          bonus_price_min_avg: number
-          bonus_reputation_avg: number
-          created_at: string | null
+          bonus_price_min_avg: number | null
+          bonus_reputation_avg: number | null
           observation_count: number | null
           rarity: string
           updated_at: string | null
         }
         Insert: {
-          bonus_price_min_avg?: number
-          bonus_reputation_avg?: number
-          created_at?: string | null
+          bonus_price_min_avg?: number | null
+          bonus_reputation_avg?: number | null
           observation_count?: number | null
           rarity: string
           updated_at?: string | null
         }
         Update: {
-          bonus_price_min_avg?: number
-          bonus_reputation_avg?: number
-          created_at?: string | null
+          bonus_price_min_avg?: number | null
+          bonus_reputation_avg?: number | null
           observation_count?: number | null
           rarity?: string
           updated_at?: string | null
@@ -198,7 +192,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      trigger_daily_summary: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

@@ -9,8 +9,8 @@ interface SEOProps {
 
 // SEO elements that can be used in _document.tsx (returns JSX without Head wrapper)
 export function SEOElements({
-  title = "Hello World",
-  description = "Welcome to my app",
+  title = "OSCarEvaluation",
+  description = "Open application to find out your car value on OneState RP.",
   image = "/og-image.png",
   url,
 }: SEOProps) {
