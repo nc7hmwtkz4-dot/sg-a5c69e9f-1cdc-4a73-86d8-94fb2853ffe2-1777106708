@@ -121,28 +121,39 @@ export default function Simulateur() {
     console.log("Calculating prices for:", selectedModel.model);
     console.log("Parts configuration:", parts);
 
-    // Check for exact observation match
-    const { data: exactMatch } = await supabase
+    // CRITICAL - INTELLIGENT MATCHING BASED ON REPUTATION
+    // Calculate expected total reputation from parts configuration
+    const baseRep = selectedModel.base_reputation || 0;
+    let bonusRep = 0;
+    
+    parts.forEach((rarity) => {
+      if (rarity !== "Stock" && partWeights[rarity]) {
+        bonusRep += partWeights[rarity].bonus_reputation_avg || 0;
+      }
+    });
+    
+    const expectedRepTotal = Math.round(baseRep + bonusRep);
+    
+    console.log("Expected reputation:", expectedRepTotal);
+
+    // Search for observation with same vehicle AND matching reputation (±50 tolerance)
+    const { data: matchingObs } = await supabase
       .from("observations")
       .select("*")
       .eq("car_id", selectedModel.id)
-      .eq("engine_rarity", parts[0])
-      .eq("clutch_rarity", parts[1])
-      .eq("turbo1_rarity", parts[2])
-      .eq("turbo2_rarity", parts[3])
-      .eq("suspension1_rarity", parts[4])
-      .eq("suspension2_rarity", parts[5])
-      .eq("transmission_rarity", parts[6])
-      .eq("tires_rarity", parts[7])
+      .gte("rep_total", expectedRepTotal - 50)
+      .lte("rep_total", expectedRepTotal + 50)
+      .order("rep_total", { ascending: true })
+      .limit(1)
       .maybeSingle();
 
-    if (exactMatch && exactMatch.price_min_total) {
-      console.log("Found exact observation match!");
+    if (matchingObs && matchingObs.price_min_total) {
+      console.log("Found matching observation by reputation!");
       const carType = selectedModel.car_types;
-      const priceMin = exactMatch.price_min_total;
+      const priceMin = matchingObs.price_min_total;
       const priceMax = priceMin + (carType?.gap_max_min || 0);
       const priceReco = priceMin + (carType?.gap_reco_min || 0);
-      const priceX2 = exactMatch.price_x2 || (priceMin + (exactMatch.rep_total * (carType?.k_multiplier_avg || 2.3)));
+      const priceX2 = matchingObs.price_x2 || (priceMin + (matchingObs.rep_total * (carType?.k_multiplier_avg || 2.3)));
 
       setPrices({
         min: Math.round(priceMin),
@@ -150,7 +161,7 @@ export default function Simulateur() {
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
         confidence: "exact",
-        observationDetails: "Configuration observée - Valeurs exactes",
+        observationDetails: `Configuration observée (${matchingObs.rep_total} réputation) - Valeurs exactes`,
         isExactMatch: true,
       });
       return;
