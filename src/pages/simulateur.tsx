@@ -83,50 +83,77 @@ export default function Simulateur() {
   };
 
   const loadPartWeightsForCarType = async () => {
-    if (!selectedModel?.car_types?.id) return;
+    if (!selectedModel?.car_types?.id) {
+      console.log("No car type ID found");
+      return;
+    }
     
-    // Try to get weights specific to this car type
-    const typeSpecificWeights = await partWeightsByTypeService.getWeightsByCarType(
-      selectedModel.car_types.id
-    );
+    console.log("Loading weights for car type:", selectedModel.car_types.name, selectedModel.car_types.id);
     
-    // If we have type-specific weights with real observations, use them
-    const hasRealData = Object.values(typeSpecificWeights).some(
-      (w: any) => w.observation_count > 0
-    );
-    
-    if (hasRealData) {
-      // Use type-specific weights, falling back to global for missing rarities
-      const globalWeights = await partWeightsService.getAllWeights();
-      const mergedWeights: any = {};
+    try {
+      // Try to get weights specific to this car type
+      const typeSpecificWeights = await partWeightsByTypeService.getWeightsByCarType(
+        selectedModel.car_types.id
+      );
       
-      RARITIES.forEach(rarity => {
-        if (rarity === "Stock") return;
+      console.log("Type-specific weights loaded:", typeSpecificWeights);
+      
+      // Check if we have real data
+      const hasRealData = Object.values(typeSpecificWeights).some(
+        (w: any) => w && w.observation_count > 0
+      );
+      
+      console.log("Has real data:", hasRealData);
+      
+      if (hasRealData) {
+        // Use type-specific weights, falling back to global for missing rarities
+        const globalWeights = await partWeightsService.getAllWeights();
+        const mergedWeights: any = {};
         
-        if (typeSpecificWeights[rarity] && typeSpecificWeights[rarity].observation_count > 0) {
-          // Use type-specific weight (real data)
-          mergedWeights[rarity] = typeSpecificWeights[rarity];
-        } else if (typeSpecificWeights[rarity]) {
-          // Use type-specific fallback (global average)
-          mergedWeights[rarity] = typeSpecificWeights[rarity];
-        } else if (globalWeights[rarity]) {
-          // Last resort: global weights
-          mergedWeights[rarity] = globalWeights[rarity];
-        }
-      });
-      
-      setPartWeights(mergedWeights);
-    } else {
-      // No type-specific data, use global weights
+        RARITIES.forEach(rarity => {
+          if (rarity === "Stock") return;
+          
+          if (typeSpecificWeights[rarity] && typeSpecificWeights[rarity].observation_count > 0) {
+            // Use type-specific weight (real data)
+            mergedWeights[rarity] = typeSpecificWeights[rarity];
+          } else if (typeSpecificWeights[rarity]) {
+            // Use type-specific fallback (global average)
+            mergedWeights[rarity] = typeSpecificWeights[rarity];
+          } else if (globalWeights[rarity]) {
+            // Last resort: global weights
+            mergedWeights[rarity] = globalWeights[rarity];
+          }
+        });
+        
+        console.log("Merged weights:", mergedWeights);
+        setPartWeights(mergedWeights);
+      } else {
+        // No type-specific data, use global weights
+        console.log("Using global weights");
+        const globalWeights = await partWeightsService.getAllWeights();
+        console.log("Global weights:", globalWeights);
+        setPartWeights(globalWeights);
+      }
+    } catch (error) {
+      console.error("Error loading weights:", error);
+      // Fallback to global weights on error
       const globalWeights = await partWeightsService.getAllWeights();
       setPartWeights(globalWeights);
     }
   };
 
   const calculatePrices = async () => {
+    console.log("calculatePrices called");
+    console.log("selectedModel:", selectedModel);
+    console.log("partWeights:", partWeights);
+    console.log("parts:", parts);
+    
     if (!selectedModel || !partWeights || Object.keys(partWeights).length === 0) {
+      console.log("Missing data, cannot calculate");
       return;
     }
+
+    console.log("Checking for exact match...");
 
     // FIRST: Check if this exact configuration exists in observations
     const { data: exactMatch } = await supabase
@@ -143,40 +170,55 @@ export default function Simulateur() {
       .eq("tires_rarity", parts[7])
       .maybeSingle();
 
+    console.log("Exact match result:", exactMatch);
+
     // If exact match found, use observed values (100% confidence)
     if (exactMatch && exactMatch.price_min_total) {
+      console.log("Found exact match!");
       const carType = selectedModel.car_types;
       const priceMin = exactMatch.price_min_total;
       const priceMax = priceMin + (carType?.gap_max_min || 0);
       const priceReco = priceMin + (carType?.gap_reco_min || 0);
       const priceX2 = exactMatch.price_x2 || (priceMin + (exactMatch.rep_total * (carType?.k_multiplier_avg || 2.3)));
 
-      setPrices({
+      const result = {
         min: Math.round(priceMin),
         max: Math.round(priceMax),
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
-        confidence: "exact",
+        confidence: "exact" as const,
         kObservations: 1,
         isExactMatch: true,
-      });
+      };
+      
+      console.log("Setting exact match prices:", result);
+      setPrices(result);
       return;
     }
+
+    console.log("No exact match, calculating from ML...");
 
     // Otherwise, calculate using ML algorithm
     let totalBonusRep = 0;
     let totalBonusPrice = 0;
 
-    parts.forEach(rarity => {
+    parts.forEach((rarity, index) => {
       if (rarity !== "Stock" && partWeights[rarity]) {
-        totalBonusRep += partWeights[rarity].bonus_reputation_avg || 0;
-        totalBonusPrice += partWeights[rarity].bonus_price_min_avg || 0;
+        const repBonus = partWeights[rarity].bonus_reputation_avg || 0;
+        const priceBonus = partWeights[rarity].bonus_price_min_avg || 0;
+        console.log(`Part ${index} (${rarity}): +${repBonus} rep, +${priceBonus} price`);
+        totalBonusRep += repBonus;
+        totalBonusPrice += priceBonus;
       }
     });
+
+    console.log("Total bonuses - Rep:", totalBonusRep, "Price:", totalBonusPrice);
 
     const basePrice = selectedModel.base_price_min || 0;
     const baseRep = selectedModel.base_reputation || 0;
     const carType = selectedModel.car_types;
+
+    console.log("Base values - Price:", basePrice, "Rep:", baseRep);
 
     const priceMin = basePrice + totalBonusPrice;
     const totalRep = baseRep + totalBonusRep;
@@ -187,7 +229,9 @@ export default function Simulateur() {
     const kMultiplier = carType?.k_multiplier_avg || 2.3;
     const priceX2 = priceMin + (totalRep * kMultiplier);
 
-    setPrices({
+    console.log("K multiplier:", kMultiplier);
+
+    const result = {
       min: Math.round(priceMin),
       max: Math.round(priceMax),
       reco: Math.round(priceReco),
@@ -195,7 +239,10 @@ export default function Simulateur() {
       confidence: getConfidence(partWeights),
       kObservations: carType?.k_observation_count || 0,
       isExactMatch: false,
-    });
+    };
+
+    console.log("Setting calculated prices:", result);
+    setPrices(result);
   };
 
   const getConfidence = (weights: any): "high" | "medium" | "low" => {
