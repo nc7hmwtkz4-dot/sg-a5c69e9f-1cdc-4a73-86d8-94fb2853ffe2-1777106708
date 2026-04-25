@@ -1,51 +1,93 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Learning Service - Implements the weighted average algorithm from PRD
+ * 
+ * When a new observation is validated:
+ * 1. Extract part bonus: Total Price - Base Car Price - Other Known Parts
+ * 2. Update weighted average: ((Old Bonus * Count) + New Value) / (Count + 1)
+ */
+
 export const learningService = {
-  async processObservation(observation: {
-    carId: number;
-    basePriceMin: number; // The base_price_min of the car from cars table
-    observedTotalMinPrice: number;
-    parts: string[]; // Array of 8 parts rarities
-  }) {
-    // 1. Calculate total bonus observed
-    const totalBonusObserved = observation.observedTotalMinPrice - observation.basePriceMin;
-    
-    // 2. Identify active (non-Stock) parts
-    const activeParts = observation.parts.filter(p => p !== 'Stock');
-    
-    if (activeParts.length === 0) return; // Nothing to learn
-    
-    // 3. Distribute bonus equally among active parts (simplification as per PRD)
-    const individualContribution = totalBonusObserved / activeParts.length;
-    
-    // 4. Fetch current weights
-    const uniqueRarities = [...new Set(activeParts)];
-    const { data: currentWeights, error: fetchError } = await supabase
-      .from('part_weights')
-      .select('*')
-      .in('rarity', uniqueRarities);
-      
-    if (fetchError) throw fetchError;
-    
-    // 5. Update DB using moving average formula
-    for (const rarity of uniqueRarities) {
-      const current = currentWeights.find(w => w.rarity === rarity);
-      if (!current) continue;
-      
-      const count = current.observation_count || 0;
-      const oldAvg = Number(current.bonus_price_min_avg) || 0;
-      
-      // new_avg = ((old_avg * count) + individual_contribution) / (count + 1)
-      const newAvg = ((oldAvg * count) + individualContribution) / (count + 1);
-      
+  /**
+   * Process a validated observation and update part_weights
+   * This is the core learning algorithm from the PRD
+   */
+  async processObservation(observationId: number): Promise<void> {
+    // Get the observation with car details
+    const { data: observation, error: obsError } = await supabase
+      .from("observations")
+      .select(`
+        *,
+        cars (
+          base_price_min,
+          base_reputation
+        )
+      `)
+      .eq("id", observationId)
+      .single();
+
+    if (obsError || !observation) {
+      throw new Error("Failed to load observation");
+    }
+
+    const basePriceMin = observation.cars?.base_price_min || 0;
+    const totalPriceMin = observation.price_min_total;
+
+    // Calculate total bonus from all parts
+    const totalBonus = totalPriceMin - basePriceMin;
+
+    // Get all non-Stock parts
+    const parts = [
+      observation.engine_rarity,
+      observation.clutch_rarity,
+      observation.turbo1_rarity,
+      observation.turbo2_rarity,
+      observation.suspension1_rarity,
+      observation.suspension2_rarity,
+      observation.transmission_rarity,
+      observation.tires_rarity,
+    ].filter(p => p !== "Stock");
+
+    if (parts.length === 0) {
+      // Stock configuration, nothing to learn
+      return;
+    }
+
+    // Count each rarity type
+    const rarityCount: Record<string, number> = {};
+    parts.forEach(rarity => {
+      rarityCount[rarity] = (rarityCount[rarity] || 0) + 1;
+    });
+
+    // For each unique rarity, update its weight
+    for (const [rarity, count] of Object.entries(rarityCount)) {
+      // Get current weight
+      const { data: currentWeight } = await supabase
+        .from("part_weights")
+        .select("*")
+        .eq("rarity", rarity)
+        .single();
+
+      if (!currentWeight) continue;
+
+      // Calculate this part's contribution (simple division for now)
+      const partContribution = totalBonus / parts.length;
+
+      // Apply weighted average formula from PRD:
+      // New Bonus = ((Old Bonus * Obs Count) + New Value) / (Obs Count + 1)
+      const oldAvg = currentWeight.bonus_price_min_avg;
+      const oldCount = currentWeight.observation_count;
+      const newAvg = ((oldAvg * oldCount) + partContribution) / (oldCount + 1);
+
+      // Update the weight
       await supabase
-        .from('part_weights')
+        .from("part_weights")
         .update({
           bonus_price_min_avg: newAvg,
-          observation_count: count + 1,
-          updated_at: new Date().toISOString()
+          observation_count: oldCount + 1,
         })
-        .eq('rarity', rarity);
+        .eq("rarity", rarity);
     }
-  }
+  },
 };
