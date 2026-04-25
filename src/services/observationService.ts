@@ -6,6 +6,7 @@ export const observationService = {
     car_id: number;
     rep_total: number;
     price_min_total: number;
+    price_x2: number;
     engine_rarity: string;
     clutch_rarity: string;
     turbo1_rarity: string;
@@ -23,6 +24,7 @@ export const observationService = {
         car_id: data.car_id,
         rep_total: data.rep_total,
         price_min_total: data.price_min_total,
+        price_x2: data.price_x2,
         engine_rarity: data.engine_rarity,
         clutch_rarity: data.clutch_rarity,
         turbo1_rarity: data.turbo1_rarity,
