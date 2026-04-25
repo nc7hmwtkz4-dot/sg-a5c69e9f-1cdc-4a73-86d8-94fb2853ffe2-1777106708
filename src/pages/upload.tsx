@@ -294,7 +294,8 @@ export default function UploadPage() {
           </Button>
         </Card>
 
-        <DonationButtons />
+        {/* Donation Buttons - HIDDEN (change false to true to show) */}
+        {false && <DonationButtons />}
       </main>
     </div>
   );

@@ -140,10 +140,12 @@ export default function Home() {
           </Card>
         </section>
 
-        {/* Donation Section */}
-        <section className="max-w-2xl mx-auto">
-          <DonationButtons showProgressBar />
-        </section>
+        {/* Donation Section - HIDDEN (change false to true to show) */}
+        {false && (
+          <section className="max-w-2xl mx-auto">
+            <DonationButtons showProgressBar />
+          </section>
+        )}
 
         {/* How It Works */}
         <section className="max-w-4xl mx-auto text-center space-y-4">
@@ -181,23 +183,29 @@ export default function Home() {
             <div className="text-sm text-muted-foreground">
               © 2026 Eco-Sim. Alimenté par la communauté.
             </div>
-            <div className="flex gap-4">
-              <Button variant="outline" size="sm">
-                ☕ Buy Me a Coffee
-              </Button>
-              <Button variant="outline" size="sm">
-                💳 PayPal
-              </Button>
+            {/* Donation Buttons - HIDDEN (change false to true to show) */}
+            {false && (
+              <div className="flex gap-4">
+                <Button variant="outline" size="sm">
+                  ☕ Buy Me a Coffee
+                </Button>
+                <Button variant="outline" size="sm">
+                  💳 PayPal
+                </Button>
+              </div>
+            )}
+          </div>
+          {/* Compact Donation - HIDDEN (change false to true to show) */}
+          {false && (
+            <div className="flex justify-center">
+              <CompactDonationButton />
             </div>
-          </div>
-          <div className="flex justify-center">
-            <CompactDonationButton />
-          </div>
+          )}
         </div>
       </footer>
 
-      {/* Sticky Bottom Ad (Mobile only) */}
-      <StickyBottomAd />
+      {/* Sticky Bottom Ad - HIDDEN (change false to true to show) */}
+      {false && <StickyBottomAd />}
     </div>
   );
 }
