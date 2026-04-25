@@ -94,14 +94,18 @@ export default function Simulateur() {
 
     const priceMax = priceMin + (carType?.gap_max_min || 0);
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
-    const priceX2 = priceMin + (totalRep * 2.3); // K multiplier ~2.2-2.4
+    
+    // Use learned K multiplier from car_types instead of fixed 2.3
+    const kMultiplier = carType?.k_multiplier_avg || 2.3;
+    const priceX2 = priceMin + (totalRep * kMultiplier);
 
     setPrices({
       min: Math.round(priceMin),
       max: Math.round(priceMax),
       reco: Math.round(priceReco),
       x2: Math.round(priceX2),
-      confidence: getConfidence(partWeights)
+      confidence: getConfidence(partWeights),
+      kObservations: carType?.k_observation_count || 0,
     });
   };
 
@@ -247,7 +251,7 @@ export default function Simulateur() {
                   <div>
                     <h2 className="text-xl font-bold font-display">Estimations</h2>
                     <p className="text-sm text-muted-foreground">
-                      Basées sur {String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations
+                      Basées sur {String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations (Prix x2: {prices.kObservations} obs)
                     </p>
                   </div>
                   <Badge variant={prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"}>
