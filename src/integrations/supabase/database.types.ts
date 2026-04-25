@@ -21,6 +21,8 @@ export type Database = {
           gap_max_min: number | null
           gap_reco_min: number | null
           id: number
+          k_multiplier_avg: number | null
+          k_observation_count: number | null
           name: string
         }
         Insert: {
@@ -28,6 +30,8 @@ export type Database = {
           gap_max_min?: number | null
           gap_reco_min?: number | null
           id?: number
+          k_multiplier_avg?: number | null
+          k_observation_count?: number | null
           name: string
         }
         Update: {
@@ -35,6 +39,8 @@ export type Database = {
           gap_max_min?: number | null
           gap_reco_min?: number | null
           id?: number
+          k_multiplier_avg?: number | null
+          k_observation_count?: number | null
           name?: string
         }
         Relationships: []
@@ -85,6 +91,7 @@ export type Database = {
           engine_rarity: string | null
           id: number
           price_min_total: number
+          price_x2: number | null
           rep_total: number
           suspension1_rarity: string | null
           suspension2_rarity: string | null
@@ -101,6 +108,7 @@ export type Database = {
           engine_rarity?: string | null
           id?: number
           price_min_total: number
+          price_x2?: number | null
           rep_total: number
           suspension1_rarity?: string | null
           suspension2_rarity?: string | null
@@ -117,6 +125,7 @@ export type Database = {
           engine_rarity?: string | null
           id?: number
           price_min_total?: number
+          price_x2?: number | null
           rep_total?: number
           suspension1_rarity?: string | null
           suspension2_rarity?: string | null
