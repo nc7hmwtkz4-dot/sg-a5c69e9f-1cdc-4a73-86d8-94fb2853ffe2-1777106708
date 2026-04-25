@@ -237,8 +237,8 @@ export default function Simulateur() {
               )}
             </Card>
 
-            {/* Ad between form and results */}
-            {prices && <HorizontalAd />}
+            {/* Ad between form and results - HIDDEN (change false to true to show) */}
+            {false && prices && <HorizontalAd />}
 
             {/* Results Card */}
             {prices && (
@@ -282,14 +282,14 @@ export default function Simulateur() {
               </Card>
             )}
 
-            {/* Donation prompt after results */}
-            {prices && (
+            {/* Donation prompt - HIDDEN (change false to true to show) */}
+            {false && prices && (
               <DonationButtons showProgressBar />
             )}
           </div>
 
-          {/* Sidebar Ad (Desktop) */}
-          <SidebarAd />
+          {/* Sidebar Ad - HIDDEN (change false to true to show) */}
+          {false && <SidebarAd />}
         </div>
       </main>
     </div>
