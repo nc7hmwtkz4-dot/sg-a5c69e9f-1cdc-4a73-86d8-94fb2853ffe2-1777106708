@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DonationButtons, CompactDonationButton } from "@/components/DonationButtons";
+import { DonationButtons } from "@/components/DonationButtons";
 import { StickyBottomAd } from "@/components/AdSense";
 
 export default function Home() {
@@ -143,7 +143,7 @@ export default function Home() {
         {/* Donation Section - HIDDEN (change false to true to show) */}
         {false && (
           <section className="max-w-2xl mx-auto">
-            <DonationButtons showProgressBar />
+            <DonationButtons />
           </section>
         )}
 
@@ -187,20 +187,11 @@ export default function Home() {
             {false && (
               <div className="flex gap-4">
                 <Button variant="outline" size="sm">
-                  ☕ Buy Me a Coffee
-                </Button>
-                <Button variant="outline" size="sm">
                   💳 PayPal
                 </Button>
               </div>
             )}
           </div>
-          {/* Compact Donation - HIDDEN (change false to true to show) */}
-          {false && (
-            <div className="flex justify-center">
-              <CompactDonationButton />
-            </div>
-          )}
         </div>
       </footer>
 
