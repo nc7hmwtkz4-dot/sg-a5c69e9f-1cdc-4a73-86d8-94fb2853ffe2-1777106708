@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Calculator, Copy, ArrowLeft } from "lucide-react";
+import { Calculator, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { carService } from "@/services/carService";
@@ -10,8 +10,19 @@ import { partWeightsService } from "@/services/partWeightsService";
 import { useToast } from "@/hooks/use-toast";
 import { HorizontalAd, SidebarAd } from "@/components/AdSense";
 import { DonationButtons } from "@/components/DonationButtons";
+import { supabase } from "@/integrations/supabase/client";
 
-type Rarity = "Stock" | "Gris" | "Singulière" | "Rare" | "Épique" | "Légendaire";
+type Rarity = "Stock" | "Gris" | "Singuliere" | "Rare" | "Epique" | "Legendaire" | "Secrete";
+
+interface Prices {
+  min: number;
+  max: number;
+  reco: number;
+  x2: number;
+  confidence: "exact" | "high" | "medium" | "low";
+  kObservations: number;
+  isExactMatch?: boolean;
+}
 
 const PART_NAMES = [
   "Moteur",
@@ -70,11 +81,48 @@ export default function Simulateur() {
     setPartWeights(weights);
   };
 
-  const calculatePrices = () => {
+  const calculatePrices = async () => {
     if (!selectedModel || !partWeights || Object.keys(partWeights).length === 0) {
       return;
     }
 
+    // FIRST: Check if this exact configuration exists in observations
+    const { data: exactMatch } = await supabase
+      .from("observations")
+      .select("*")
+      .eq("car_id", selectedModel.id)
+      .eq("engine_rarity", parts[0])
+      .eq("clutch_rarity", parts[1])
+      .eq("turbo1_rarity", parts[2])
+      .eq("turbo2_rarity", parts[3])
+      .eq("suspension1_rarity", parts[4])
+      .eq("suspension2_rarity", parts[5])
+      .eq("transmission_rarity", parts[6])
+      .eq("tires_rarity", parts[7])
+      .maybeSingle();
+
+    // If exact match found, use observed values (100% confidence)
+    if (exactMatch && exactMatch.price_min_total) {
+      const basePrice = selectedModel.base_price_min || 0;
+      const carType = selectedModel.car_types;
+      const priceMin = exactMatch.price_min_total;
+      const priceMax = priceMin + (carType?.gap_max_min || 0);
+      const priceReco = priceMin + (carType?.gap_reco_min || 0);
+      const priceX2 = exactMatch.price_x2 || (priceMin + (exactMatch.rep_total * (carType?.k_multiplier_avg || 2.3)));
+
+      setPrices({
+        min: Math.round(priceMin),
+        max: Math.round(priceMax),
+        reco: Math.round(priceReco),
+        x2: Math.round(priceX2),
+        confidence: "exact", // New confidence level for exact matches
+        kObservations: 1,
+        isExactMatch: true,
+      });
+      return;
+    }
+
+    // Otherwise, calculate using ML algorithm
     let totalBonusRep = 0;
     let totalBonusPrice = 0;
 
@@ -95,7 +143,6 @@ export default function Simulateur() {
     const priceMax = priceMin + (carType?.gap_max_min || 0);
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
     
-    // Use learned K multiplier from car_types instead of fixed 2.3
     const kMultiplier = carType?.k_multiplier_avg || 2.3;
     const priceX2 = priceMin + (totalRep * kMultiplier);
 
@@ -106,6 +153,7 @@ export default function Simulateur() {
       x2: Math.round(priceX2),
       confidence: getConfidence(partWeights),
       kObservations: carType?.k_observation_count || 0,
+      isExactMatch: false,
     });
   };
 
@@ -251,11 +299,14 @@ export default function Simulateur() {
                   <div>
                     <h2 className="text-xl font-bold font-display">Estimations</h2>
                     <p className="text-sm text-muted-foreground">
-                      Basées sur {String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations (Prix x2: {prices.kObservations} obs)
+                      {prices.isExactMatch 
+                        ? "Configuration observée - Valeurs exactes" 
+                        : `Basées sur ${String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations (Prix x2: ${prices.kObservations} obs)`
+                      }
                     </p>
                   </div>
-                  <Badge variant={prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"}>
-                    {prices.confidence === "high" ? "🟢 Haute" : prices.confidence === "medium" ? "🟡 Moyenne" : "🔴 Basse"}
+                  <Badge variant={prices.confidence === "exact" ? "default" : prices.confidence === "high" ? "default" : prices.confidence === "medium" ? "secondary" : "destructive"} className={prices.confidence === "exact" ? "bg-green-600" : ""}>
+                    {prices.confidence === "exact" ? "✓ Observation exacte" : prices.confidence === "high" ? "🟢 Haute" : prices.confidence === "medium" ? "🟡 Moyenne" : "🔴 Basse"}
                   </Badge>
                 </div>
 
