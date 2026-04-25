@@ -160,10 +160,10 @@ export default function Simulateur() {
     const kMultiplier = carType?.k_multiplier_avg || 2.3;
     const priceX2 = priceMin + (totalRep * kMultiplier);
 
-    const avgObservations = Object.values(partWeights)
-      .filter((w: any) => w.observation_count > 0)
-      .reduce((sum: number, w: any) => sum + w.observation_count, 0) / 
-      Object.keys(partWeights).length;
+    const weightsArray = Object.values(partWeights) as any[];
+    const validWeights = weightsArray.filter(w => w && w.observation_count > 0);
+    const totalObs = validWeights.reduce((sum: number, w: any) => sum + (Number(w.observation_count) || 0), 0);
+    const avgObservations = weightsArray.length > 0 ? totalObs / weightsArray.length : 0;
 
     const confidence = avgObservations >= 3 ? "high" : avgObservations >= 1 ? "medium" : "low";
 
