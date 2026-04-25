@@ -145,7 +145,6 @@ export default function Simulateur() {
 
     // If exact match found, use observed values (100% confidence)
     if (exactMatch && exactMatch.price_min_total) {
-      const basePrice = selectedModel.base_price_min || 0;
       const carType = selectedModel.car_types;
       const priceMin = exactMatch.price_min_total;
       const priceMax = priceMin + (carType?.gap_max_min || 0);
@@ -157,7 +156,7 @@ export default function Simulateur() {
         max: Math.round(priceMax),
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
-        confidence: "exact", // New confidence level for exact matches
+        confidence: "exact",
         kObservations: 1,
         isExactMatch: true,
       });
