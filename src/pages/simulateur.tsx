@@ -215,8 +215,47 @@ export default function Simulateur() {
     const totalRep = baseRep + totalBonusRep;
     const priceMax = priceMin + (carType?.gap_max_min || 0);
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
-    const kMultiplier = carType?.k_multiplier_avg || 2.3;
-    const priceX2 = priceMin + (totalRep * kMultiplier);
+    
+    // Fix priceX2 calculation
+    // Calculate the base x2 multiplier from the stock observation if it exists, or fallback to the average
+    let kMultiplier = carType?.k_multiplier_avg || 2.3;
+    
+    // Fetch the base observation to get its real x2 price as a starting point
+    let basePriceX2 = 0;
+    try {
+      const { data: stockObs } = await supabase
+        .from("observations")
+        .select("price_x2")
+        .eq("car_id", selectedModel.id)
+        .order("rep_total", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+        
+      if (stockObs && stockObs.price_x2) {
+        basePriceX2 = stockObs.price_x2;
+        // The bonus added for x2 should scale with the reputation added, relative to the min price bonus
+        // or just use a derived multiplier for the added reputation
+        kMultiplier = (stockObs.price_x2 - basePrice) / baseRep;
+        // Fallback to a reasonable default if the math is weird
+        if (isNaN(kMultiplier) || kMultiplier <= 0 || kMultiplier > 500) {
+          kMultiplier = carType?.k_multiplier_avg || 2.3;
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching stock obs for x2 base", e);
+    }
+
+    // New formula: If we have a base x2 price, start from there and add the bonus.
+    // The bonus for x2 price should at least be equal to the min price bonus.
+    let priceX2;
+    if (basePriceX2 > 0) {
+      // The x2 value scales slightly faster than the min price value based on added reputation
+      const x2Bonus = totalBonusPrice + (totalBonusRep * kMultiplier);
+      priceX2 = basePriceX2 + x2Bonus;
+    } else {
+      // Fallback if no base observation exists
+      priceX2 = priceMin + (totalRep * kMultiplier);
+    }
     
     console.log("ML Calculation Summary:");
     console.log("- Base Price:", basePrice);

@@ -212,7 +212,7 @@ export async function applyLearningResults(results: LearningResult): Promise<voi
 /**
  * Complete learning workflow - run algorithm and update DB
  */
-export async function runCompleteLearnin(): Promise<void> {
+export async function runCompleteLearning(): Promise<void> {
   try {
     const results = await runLearningAlgorithm();
     await applyLearningResults(results);
