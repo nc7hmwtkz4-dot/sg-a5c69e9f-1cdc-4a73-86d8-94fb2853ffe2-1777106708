@@ -47,12 +47,14 @@ export default function UploadPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("🚀 Composant UploadPage monté, chargement des marques...");
     const loadBrands = async () => {
       try {
         const brandsData = await carService.getBrands();
+        console.log("✅ Marques chargées:", brandsData);
         setBrands(brandsData);
       } catch (error) {
-        console.error("Error loading brands:", error);
+        console.error("❌ Erreur lors du chargement des marques:", error);
         toast({
           title: "Erreur",
           description: "Impossible de charger les marques",
@@ -61,15 +63,17 @@ export default function UploadPage() {
       }
     };
     loadBrands();
-  }, []);
+  }, [toast]);
 
   const loadModels = async (brand: string) => {
+    console.log("🔄 Chargement des modèles pour la marque:", brand);
     try {
       const data = await carService.getModelsByBrand(brand);
+      console.log("✅ Modèles chargés:", data);
       setModels(data);
       setSelectedModel(null);
     } catch (error) {
-      console.error("Error loading models:", error);
+      console.error("❌ Erreur lors du chargement des modèles:", error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les modèles",
@@ -79,6 +83,7 @@ export default function UploadPage() {
   };
 
   const handleBrandChange = (brand: string) => {
+    console.log("🎯 Marque sélectionnée:", brand);
     setSelectedBrand(brand);
     loadModels(brand);
   };
