@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Check, Database } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,18 +46,36 @@ export default function UploadPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const { toast } = useToast();
 
-  useState(() => {
-    const loadData = async () => {
-      const brandsData = await carService.getBrands();
-      setBrands(brandsData);
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const brandsData = await carService.getBrands();
+        setBrands(brandsData);
+      } catch (error) {
+        console.error("Error loading brands:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les marques",
+          variant: "destructive",
+        });
+      }
     };
-    loadData();
-  });
+    loadBrands();
+  }, []);
 
   const loadModels = async (brand: string) => {
-    const data = await carService.getModelsByBrand(brand);
-    setModels(data);
-    setSelectedModel(null);
+    try {
+      const data = await carService.getModelsByBrand(brand);
+      setModels(data);
+      setSelectedModel(null);
+    } catch (error) {
+      console.error("Error loading models:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les modèles",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBrandChange = (brand: string) => {
