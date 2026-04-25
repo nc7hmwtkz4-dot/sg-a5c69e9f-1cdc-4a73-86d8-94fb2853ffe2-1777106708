@@ -50,12 +50,7 @@ export const observationService = {
     ];
     
     if (data.base_price_min) {
-      await learningService.processObservation({
-        carId: data.car_id,
-        basePriceMin: data.base_price_min,
-        observedTotalMinPrice: data.price_min_total,
-        parts
-      });
+      await learningService.processObservation(obs.id);
     }
     
     return obs;
