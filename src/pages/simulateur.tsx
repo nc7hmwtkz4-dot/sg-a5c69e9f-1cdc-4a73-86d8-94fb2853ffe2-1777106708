@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { carService } from "@/services/carService";
+import { partWeightsByTypeService } from "@/services/partWeightsByTypeService";
 import { partWeightsService } from "@/services/partWeightsService";
 import { useToast } from "@/hooks/use-toast";
 import { HorizontalAd, SidebarAd } from "@/components/AdSense";
@@ -49,7 +50,6 @@ export default function Simulateur() {
 
   useEffect(() => {
     loadBrands();
-    loadPartWeights();
   }, []);
 
   useEffect(() => {
@@ -60,6 +60,12 @@ export default function Simulateur() {
 
   useEffect(() => {
     if (selectedModel) {
+      loadPartWeightsForCarType();
+    }
+  }, [selectedModel]);
+
+  useEffect(() => {
+    if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
       calculatePrices();
     }
   }, [selectedModel, parts, partWeights]);
@@ -76,9 +82,45 @@ export default function Simulateur() {
     setParts(Array(8).fill("Stock"));
   };
 
-  const loadPartWeights = async () => {
-    const weights = await partWeightsService.getAllWeights();
-    setPartWeights(weights);
+  const loadPartWeightsForCarType = async () => {
+    if (!selectedModel?.car_types?.id) return;
+    
+    // Try to get weights specific to this car type
+    const typeSpecificWeights = await partWeightsByTypeService.getWeightsByCarType(
+      selectedModel.car_types.id
+    );
+    
+    // If we have type-specific weights with real observations, use them
+    const hasRealData = Object.values(typeSpecificWeights).some(
+      (w: any) => w.observation_count > 0
+    );
+    
+    if (hasRealData) {
+      // Use type-specific weights, falling back to global for missing rarities
+      const globalWeights = await partWeightsService.getAllWeights();
+      const mergedWeights: any = {};
+      
+      RARITIES.forEach(rarity => {
+        if (rarity === "Stock") return;
+        
+        if (typeSpecificWeights[rarity] && typeSpecificWeights[rarity].observation_count > 0) {
+          // Use type-specific weight (real data)
+          mergedWeights[rarity] = typeSpecificWeights[rarity];
+        } else if (typeSpecificWeights[rarity]) {
+          // Use type-specific fallback (global average)
+          mergedWeights[rarity] = typeSpecificWeights[rarity];
+        } else if (globalWeights[rarity]) {
+          // Last resort: global weights
+          mergedWeights[rarity] = globalWeights[rarity];
+        }
+      });
+      
+      setPartWeights(mergedWeights);
+    } else {
+      // No type-specific data, use global weights
+      const globalWeights = await partWeightsService.getAllWeights();
+      setPartWeights(globalWeights);
+    }
   };
 
   const calculatePrices = async () => {
@@ -157,11 +199,19 @@ export default function Simulateur() {
     });
   };
 
-  const getConfidence = (weights: any): string => {
-    const counts = Object.values(weights).map((w: any) => w.observation_count || 0);
-    const avgCount = counts.reduce((a: number, b: number) => a + b, 0) / counts.length;
-    if (avgCount >= 10) return "high";
-    if (avgCount >= 5) return "medium";
+  const getConfidence = (weights: any): "high" | "medium" | "low" => {
+    // Check if we're using type-specific weights with real observations
+    const typeSpecificObs = Object.values(weights)
+      .filter((w: any) => w.observation_count > 0)
+      .map((w: any) => w.observation_count);
+    
+    if (typeSpecificObs.length > 0) {
+      const avgCount = typeSpecificObs.reduce((a: number, b: number) => a + b, 0) / typeSpecificObs.length;
+      if (avgCount >= 3) return "high";
+      if (avgCount >= 1) return "medium";
+    }
+    
+    // Using global weights or fallback
     return "low";
   };
 
@@ -301,7 +351,7 @@ export default function Simulateur() {
                     <p className="text-sm text-muted-foreground">
                       {prices.isExactMatch 
                         ? "Configuration observée - Valeurs exactes" 
-                        : `Basées sur ${String((Object.values(partWeights) as any[]).reduce((acc: number, w: any) => acc + (w.observation_count || 0), 0))} observations (Prix x2: ${prices.kObservations} obs)`
+                        : `Modèle ${selectedModel?.car_types?.name || 'global'} - ${prices.kObservations} obs pour Prix x2`
                       }
                     </p>
                   </div>

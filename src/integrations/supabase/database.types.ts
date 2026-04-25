@@ -169,6 +169,47 @@ export type Database = {
         }
         Relationships: []
       }
+      part_weights_by_type: {
+        Row: {
+          bonus_price_min_avg: number | null
+          bonus_reputation_avg: number | null
+          car_type_id: number
+          created_at: string | null
+          id: number
+          observation_count: number | null
+          part_rarity: string
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_price_min_avg?: number | null
+          bonus_reputation_avg?: number | null
+          car_type_id: number
+          created_at?: string | null
+          id?: number
+          observation_count?: number | null
+          part_rarity: string
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_price_min_avg?: number | null
+          bonus_reputation_avg?: number | null
+          car_type_id?: number
+          created_at?: string | null
+          id?: number
+          observation_count?: number | null
+          part_rarity?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "part_weights_by_type_car_type_id_fkey"
+            columns: ["car_type_id"]
+            isOneToOne: false
+            referencedRelation: "car_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
