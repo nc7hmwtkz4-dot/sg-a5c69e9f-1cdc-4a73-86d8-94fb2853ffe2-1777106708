@@ -195,7 +195,6 @@ export default function Simulateur() {
     });
 
     const basePrice = selectedModel.base_price_min || 0;
-    const baseRep = selectedModel.base_reputation || 0;
     const carType = selectedModel.car_types;
 
     const priceMin = basePrice + totalBonusPrice;
