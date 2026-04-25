@@ -1,124 +1,60 @@
-import { Coffee, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-/**
- * Donation Buttons Component
- * 
- * PRD Requirements:
- * - PayPal donation button
- * - Buy Me a Coffee button
- * - Visible in footer and on results pages
- * - Optional progress bar showing hosting costs
- */
-
-type DonationButtonsProps = {
-  showProgressBar?: boolean;
-  className?: string;
-};
-
-export function DonationButtons({ 
-  showProgressBar = false,
-  className = ""
-}: DonationButtonsProps) {
-  const paypalLink = process.env.NEXT_PUBLIC_PAYPAL_DONATION_URL || "#";
-  const buyMeCoffeeLink = process.env.NEXT_PUBLIC_BUYMECOFFEE_URL || "#";
+export function DonationButtons() {
+  const handlePayPalDonate = () => {
+    // PayPal donation link with the user's email
+    const paypalUrl = `https://www.paypal.com/donate/?hosted_button_id=&business=aubert.th@gmail.com&currency_code=EUR&item_name=Soutenir+Eco-Sim`;
+    window.open(paypalUrl, "_blank");
+  };
 
   return (
-    <Card className={`p-4 space-y-4 ${className}`}>
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <Heart className="w-5 h-5 text-accent" />
-          <h3 className="font-bold font-display">Soutenez Eco-Sim</h3>
+    <Card className="p-6 bg-gradient-to-br from-accent/5 to-primary/5 border-accent/20">
+      <div className="flex flex-col items-center text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+          <Heart className="w-6 h-6 text-accent" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          Ce projet est gratuit et open source. Aidez-nous à couvrir les frais d'hébergement et d'IA.
-        </p>
-      </div>
-
-      {showProgressBar && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Objectif mensuel</span>
-            <span>45%</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className="bg-accent h-2 rounded-full transition-all duration-500" 
-              style={{ width: "45%" }}
-            />
-          </div>
-          <p className="text-xs text-center text-muted-foreground">
-            180€ / 400€ pour l'hébergement et l'API OpenAI
+        
+        <div>
+          <h3 className="font-display font-bold text-lg mb-2">
+            Soutenez le Projet
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Eco-Sim est gratuit et le restera. Vos dons nous aident à couvrir les frais d&apos;hébergement 
+            et à continuer d&apos;améliorer la plateforme pour toute la communauté.
           </p>
         </div>
-      )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          asChild
-          variant="outline"
-          className="border-[#0070ba] text-[#0070ba] hover:bg-[#0070ba]/10"
-        >
-          <a 
-            href={paypalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2"
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {/* PayPal Donation Button */}
+          <Button
+            onClick={handlePayPalDonate}
+            className="bg-[#0070ba] hover:bg-[#003087] text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .759-.64h8.56c2.684 0 4.535 1.478 4.535 4.223 0 3.556-2.888 5.604-6.854 5.604h-3.33l-1.538 8.43zm6.854-13.697c1.573 0 2.684.733 2.684 2.223 0 2.084-1.573 3.223-3.684 3.223h-2.33l.844-4.623c.044-.243.249-.443.499-.443h2.987z"/>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.12-6.514 5.12h-.5a.805.805 0 0 0-.794.68l-.04.22-.63 3.993-.028.15a.805.805 0 0 1-.794.68H7.72a.483.483 0 0 1-.477-.558L9.096 7.35a.972.972 0 0 1 .957-.817h4.86c1.595 0 2.718.33 3.335 1.007.18.2.328.42.446.664.27.556.425 1.228.425 2.042 0 .117-.004.238-.012.358" />
+              <path d="M9.295 7.79c-.03.176-.013.357.05.518a.973.973 0 0 0 .907.635h4.86c1.595 0 2.718.33 3.335 1.007.18.2.328.42.446.664-.598 3.837-3.226 5.17-6.514 5.17h-.5a.805.805 0 0 0-.794.68l-.04.22-.63 3.993-.028.15a.805.805 0 0 1-.794.68H7.72a.483.483 0 0 1-.477-.558l1.853-11.74c.042-.268.27-.48.545-.48h4.86c.18 0 .36.015.535.043-.68-.02-1.43.03-2.11.287a2.913 2.913 0 0 0-1.524 1.316c-.267.456-.396.997-.506 1.415" />
             </svg>
-            PayPal
-          </a>
-        </Button>
+            <span>Faire un don via PayPal</span>
+          </Button>
+        </div>
 
-        <Button
-          asChild
-          variant="default"
-          className="bg-[#FFDD00] text-gray-900 hover:bg-[#FFDD00]/90"
-        >
-          <a 
-            href={buyMeCoffeeLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2"
-          >
-            <Coffee className="w-4 h-4" />
-            Buy Me a Coffee
-          </a>
-        </Button>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span>Sécurisé</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+            <span>Sans inscription</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-accent"></div>
+            <span>100% transparent</span>
+          </div>
+        </div>
       </div>
-
-      <p className="text-xs text-center text-muted-foreground">
-        Merci pour votre soutien ! 🙏
-      </p>
     </Card>
-  );
-}
-
-/**
- * Compact Donation Button (for footer)
- */
-export function CompactDonationButton() {
-  const buyMeCoffeeLink = process.env.NEXT_PUBLIC_BUYMECOFFEE_URL || "#";
-
-  return (
-    <Button
-      asChild
-      size="sm"
-      variant="outline"
-      className="border-accent text-accent hover:bg-accent/10"
-    >
-      <a 
-        href={buyMeCoffeeLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2"
-      >
-        <Coffee className="w-3 h-3" />
-        Nous soutenir
-      </a>
-    </Button>
   );
 }
