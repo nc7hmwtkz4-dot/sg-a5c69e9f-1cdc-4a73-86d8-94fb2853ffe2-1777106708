@@ -66,45 +66,45 @@ export default function Home() {
         </section>
 
         {/* Action Cards */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-1 gap-6 max-w-2xl mx-auto">
           {/* Simulator Card */}
-          <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Calculator className="w-6 h-6 text-primary" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-foreground font-display">
-                Calculer un Prix
-              </h3>
-              <p className="text-muted-foreground">
-                Sélectionnez votre véhicule et configurez vos pièces pour obtenir une estimation en temps réel des prix Min, Max, Reco et x2.
-              </p>
-            </div>
-            <Link href="/simulateur">
-              <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                Ouvrir le Simulateur
-              </Button>
-            </Link>
-          </Card>
-
-          {/* Upload Card */}
-          <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-              <Upload className="w-6 h-6 text-accent" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-foreground font-display">
-                Ajouter une Observation
-              </h3>
-              <p className="text-muted-foreground">
-                Saisissez manuellement les caractéristiques de votre véhicule pour contribuer aux données communautaires.
-              </p>
-            </div>
-            <Link href="/upload">
-              <Button className="w-full" variant="outline">
-                Saisir une Observation
-              </Button>
-            </Link>
+          <Card className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 border-border/50 backdrop-blur-sm bg-card/80">
+            <CardHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <Calculator className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle className="text-2xl font-display">Simulateur</CardTitle>
+              </div>
+              <CardDescription className="text-base">
+                Estimations précises basées sur 100+ observations réelles
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Sélection marque & modèle</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>8 sélecteurs de rareté de pièces</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Prix Min, Max, Reco & x2 en temps réel</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Indicateurs de confiance</span>
+                </li>
+              </ul>
+              <Link href="/simulateur">
+                <Button className="w-full group-hover:bg-primary group-hover:shadow-lg group-hover:shadow-primary/50 transition-all">
+                  Lancer le Simulateur
+                </Button>
+              </Link>
+            </CardContent>
           </Card>
         </div>
 
