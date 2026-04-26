@@ -1,4 +1,4 @@
-# Eco-Sim — Automotive Market Intelligence Platform
+# OSCar Evaluation — Automotive Market Intelligence Platform
 
 ## Vision
 Transform tedious manual price tracking into a data-driven system that learns from community observations to provide the most accurate in-game automotive market predictions. Built for manual data entry and real-time price simulation.

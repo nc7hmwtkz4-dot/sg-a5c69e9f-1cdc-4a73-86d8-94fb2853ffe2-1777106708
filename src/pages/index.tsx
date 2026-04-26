@@ -45,10 +45,10 @@ export default function Home() {
       <header className="border-b border-border bg-card shadow-sm">
         <div className="container py-4">
           <h1 className="text-2xl font-bold text-primary font-display">
-            Eco-Sim
+            OSCar Evaluation
           </h1>
           <p className="text-sm text-muted-foreground">
-            Automotive Market Intelligence
+            Intelligence de marché automobile
           </p>
         </div>
       </header>
@@ -181,7 +181,7 @@ export default function Home() {
         <div className="container py-8 space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              © 2026 Eco-Sim. Alimenté par la communauté.
+              © 2026 OSCar Evaluation. Alimenté par la communauté.
             </div>
             {/* Donation Buttons - HIDDEN (change false to true to show) */}
             {false && (
