@@ -153,8 +153,10 @@ export default function Simulateur() {
       console.log("Found EXACT matching observation by reputation!");
       const carType = selectedModel.car_types;
       const priceMin = matchingObs.price_min_total;
-      const priceMax = priceMin + (carType?.gap_max_min || 0);
-      const priceReco = priceMin + (carType?.gap_reco_min || 0);
+      
+      // Use observation values if available, otherwise calculate from car_types
+      const priceMax = matchingObs.price_max || (priceMin + (carType?.gap_max_min || 0));
+      const priceReco = matchingObs.price_reco || (priceMin + (carType?.gap_reco_min || 0));
       const priceX2 = matchingObs.price_x2;
 
       setPrices({

@@ -90,7 +90,9 @@ export type Database = {
           created_at: string | null
           engine_rarity: string | null
           id: number
+          price_max: number | null
           price_min_total: number
+          price_reco: number | null
           price_x2: number | null
           rep_total: number
           suspension1_rarity: string | null
@@ -107,7 +109,9 @@ export type Database = {
           created_at?: string | null
           engine_rarity?: string | null
           id?: number
+          price_max?: number | null
           price_min_total: number
+          price_reco?: number | null
           price_x2?: number | null
           rep_total: number
           suspension1_rarity?: string | null
@@ -124,7 +128,9 @@ export type Database = {
           created_at?: string | null
           engine_rarity?: string | null
           id?: number
+          price_max?: number | null
           price_min_total?: number
+          price_reco?: number | null
           price_x2?: number | null
           rep_total?: number
           suspension1_rarity?: string | null
