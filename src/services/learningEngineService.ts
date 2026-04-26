@@ -111,11 +111,16 @@ function runAlgorithmForCarType(typeId: number, typeName: string, observations: 
         const deducedPriceX2 = (totalBonusPriceX2 - knownBonusPriceX2) / unknownCount;
         const deducedRep = (totalBonusRep - knownBonusRep) / unknownCount;
         
+        // Initialize array if it doesn't exist
+        if (!learnedValues[unknownRarity]) {
+          learnedValues[unknownRarity] = [];
+        }
+        
         learnedValues[unknownRarity].push({
           priceMin: deducedPriceMin,
           priceX2: deducedPriceX2,
           rep: deducedRep,
-          count: 1
+          observationId: obs.id,
         });
         
         console.log(`[Déduction Iter ${iteration+1}] Config Mixte -> 1 ${unknownRarity} = ${Math.round(deducedPriceMin)}€ (Min) | ${Math.round(deducedPriceX2)}€ (x2)`);
