@@ -38,6 +38,26 @@ const PART_NAMES = [
 
 const RARITIES: Rarity[] = ["Stock", "Gris", "Singuliere", "Rare", "Epique", "Legendaire", "Secrete"];
 
+// Helper function to get color class for each rarity
+const getRarityColorClass = (rarity: Rarity): string => {
+  switch (rarity) {
+    case "Gris":
+      return "bg-gray-700 text-gray-200";
+    case "Singuliere":
+      return "bg-green-700 text-green-100";
+    case "Rare":
+      return "bg-blue-700 text-blue-100";
+    case "Epique":
+      return "bg-purple-700 text-purple-100";
+    case "Legendaire":
+      return "bg-yellow-700 text-yellow-100";
+    case "Secrete":
+      return "bg-red-700 text-red-100";
+    default:
+      return ""; // Stock - no special color
+  }
+};
+
 export default function Simulateur() {
   const [brands, setBrands] = useState<string[]>([]);
   const [models, setModels] = useState<any[]>([]);
@@ -455,12 +475,16 @@ export default function Simulateur() {
                     <div key={index}>
                       <label className="block text-sm font-medium mb-2">{partName}</label>
                       <Select value={parts[index]} onValueChange={(value) => handlePartChange(index, value as Rarity)}>
-                        <SelectTrigger>
+                        <SelectTrigger className={getRarityColorClass(parts[index])}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {RARITIES.map((rarity) => (
-                            <SelectItem key={rarity} value={rarity}>
+                            <SelectItem 
+                              key={rarity} 
+                              value={rarity}
+                              className={getRarityColorClass(rarity)}
+                            >
                               {rarity}
                             </SelectItem>
                           ))}
