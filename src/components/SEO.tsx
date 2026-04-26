@@ -39,10 +39,10 @@ export function SEOElements({
 // SEO component for use in pages/_app.tsx or individual pages (uses next/head)
 // Note: Flattened structure (no fragment) for better Next.js Head compatibility during hot reload
 export function SEO({
-  title = "Hello World",
-  description = "Welcome to my app",
+  title = "OSCar Evaluation",
+  description = "Plateforme d'intelligence de marché automobile - Prédictions de prix basées sur l'apprentissage communautaire",
   image = "/og-image.png",
-  url,
+  url = "https://oscar-evaluation.vercel.app",
 }: SEOProps) {
   return (
     <Head>
