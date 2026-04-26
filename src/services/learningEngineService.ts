@@ -120,7 +120,7 @@ function runAlgorithmForCarType(typeId: number, typeName: string, observations: 
           priceMin: deducedPriceMin,
           priceX2: deducedPriceX2,
           rep: deducedRep,
-          observationId: obs.id,
+          count: 1
         });
         
         console.log(`[Déduction Iter ${iteration+1}] Config Mixte -> 1 ${unknownRarity} = ${Math.round(deducedPriceMin)}€ (Min) | ${Math.round(deducedPriceX2)}€ (x2)`);
