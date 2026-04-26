@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type Json =
   | string
   | number
@@ -148,6 +148,7 @@ export type Database = {
       part_weights: {
         Row: {
           bonus_price_min_avg: number | null
+          bonus_price_x2_avg: number | null
           bonus_reputation_avg: number | null
           observation_count: number | null
           rarity: string
@@ -155,6 +156,7 @@ export type Database = {
         }
         Insert: {
           bonus_price_min_avg?: number | null
+          bonus_price_x2_avg?: number | null
           bonus_reputation_avg?: number | null
           observation_count?: number | null
           rarity: string
@@ -162,6 +164,7 @@ export type Database = {
         }
         Update: {
           bonus_price_min_avg?: number | null
+          bonus_price_x2_avg?: number | null
           bonus_reputation_avg?: number | null
           observation_count?: number | null
           rarity?: string
@@ -172,6 +175,7 @@ export type Database = {
       part_weights_by_type: {
         Row: {
           bonus_price_min_avg: number | null
+          bonus_price_x2_avg: number | null
           bonus_reputation_avg: number | null
           car_type_id: number
           created_at: string | null
@@ -182,6 +186,7 @@ export type Database = {
         }
         Insert: {
           bonus_price_min_avg?: number | null
+          bonus_price_x2_avg?: number | null
           bonus_reputation_avg?: number | null
           car_type_id: number
           created_at?: string | null
@@ -192,6 +197,7 @@ export type Database = {
         }
         Update: {
           bonus_price_min_avg?: number | null
+          bonus_price_x2_avg?: number | null
           bonus_reputation_avg?: number | null
           car_type_id?: number
           created_at?: string | null

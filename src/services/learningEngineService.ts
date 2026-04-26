@@ -1,258 +1,244 @@
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * SIMPLE LEARNING ENGINE - Calculate part bonuses by car type
- * 
- * For each observation:
- * 1. Total bonus = price_min - base_price_min
- * 2. Count non-stock parts by rarity
- * 3. Divide total bonus by number of parts → bonus per part
- * 4. Average all observations for each (type_id, rarity) combination
- */
-
 interface ObservationData {
   id: number;
   car_id: number;
   type_id: number;
   base_price_min: number;
+  base_price_x2: number;
   price_min_total: number;
-  parts: {
-    engine: string;
-    clutch: string;
-    turbo1: string;
-    turbo2: string;
-    suspension1: string;
-    suspension2: string;
-    transmission: string;
-    tires: string;
-  };
+  price_x2_total: number;
+  rep_total: number;
+  base_reputation: number;
+  parts: Record<string, number>;
 }
 
-interface PartBonus {
-  rarity: string;
-  bonus: number;
+interface DeducedValue {
+  priceMin: number;
+  priceX2: number;
+  rep: number;
   count: number;
 }
 
-interface TypeRarityAverage {
-  type_id: number;
-  rarity: string;
-  total_bonus: number;
-  observation_count: number;
-  avg_bonus: number;
-}
-
 /**
- * Fetch all observations with car type info
+ * 🚗 ALGORITHME D'APPRENTISSAGE PAR TYPE DE VOITURE
+ * 
+ * Un algorithme indépendant pour chaque type (Singulière, Rare, Épique, Légendaire, Secrète)
+ * Calcule les bonus de Prix Min ET Prix x2 pour chaque rareté de pièce
  */
-async function fetchAllObservations(): Promise<ObservationData[]> {
-  const { data, error } = await supabase
-    .from("observations")
-    .select(`
-      id,
-      car_id,
-      price_min_total,
-      engine_rarity,
-      clutch_rarity,
-      turbo1_rarity,
-      turbo2_rarity,
-      suspension1_rarity,
-      suspension2_rarity,
-      transmission_rarity,
-      tires_rarity,
-      cars!inner(
-        type_id,
-        base_price_min
-      )
-    `)
-    .not("price_min_total", "is", null);
+function runAlgorithmForCarType(typeId: number, typeName: string, observations: ObservationData[]) {
+  console.log(`\n=== 🚗 ALGORITHME ${typeId} : TYPE ${typeName.toUpperCase()} ===`);
+  console.log(`Analyse de ${observations.length} observations spécifiques...`);
 
-  if (error) throw error;
-  if (!data || data.length === 0) {
-    throw new Error("No observations found in database");
-  }
-
-  return data.map((obs: any) => ({
-    id: obs.id,
-    car_id: obs.car_id,
-    type_id: obs.cars.type_id,
-    base_price_min: obs.cars.base_price_min,
-    price_min_total: obs.price_min_total,
-    parts: {
-      engine: obs.engine_rarity || "Stock",
-      clutch: obs.clutch_rarity || "Stock",
-      turbo1: obs.turbo1_rarity || "Stock",
-      turbo2: obs.turbo2_rarity || "Stock",
-      suspension1: obs.suspension1_rarity || "Stock",
-      suspension2: obs.suspension2_rarity || "Stock",
-      transmission: obs.transmission_rarity || "Stock",
-      tires: obs.tires_rarity || "Stock"
-    }
-  }));
-}
-
-/**
- * Calculate part bonuses for a single observation
- * Simple division: total bonus / number of parts
- */
-function calculateObservationBonuses(obs: ObservationData): PartBonus[] {
-  const totalBonus = obs.price_min_total - obs.base_price_min;
-  
-  // Count parts by rarity
-  const partCounts: Record<string, number> = {};
-  const allParts = Object.values(obs.parts);
-  
-  for (const rarity of allParts) {
-    if (rarity === "Stock") continue;
-    partCounts[rarity] = (partCounts[rarity] || 0) + 1;
-  }
-
-  const totalNonStockParts = Object.values(partCounts).reduce((sum, count) => sum + count, 0);
-  
-  if (totalNonStockParts === 0) {
-    return []; // All stock - no bonuses to calculate
-  }
-
-  // Simple division: bonus per part = total bonus / number of parts
-  const bonusPerPart = totalBonus / totalNonStockParts;
-
-  return Object.entries(partCounts).map(([rarity, count]) => ({
-    rarity,
-    bonus: bonusPerPart,
-    count
-  }));
-}
-
-/**
- * Run the learning algorithm
- */
-export async function runLearningAlgorithm(): Promise<{
-  globalAverages: Record<string, { bonus: number; count: number }>;
-  typeAverages: TypeRarityAverage[];
-  observationsProcessed: number;
-}> {
-  console.log("🎓 Starting learning algorithm...");
-
-  // Fetch all observations
-  const observations = await fetchAllObservations();
-  console.log(`📊 Processing ${observations.length} observations...`);
-
-  // Accumulators
-  const globalAccumulator: Record<string, { total: number; count: number }> = {};
-  const typeAccumulator: Record<string, { total: number; count: number }> = {}; // key: "typeId-rarity"
-
-  // Process each observation
-  for (const obs of observations) {
-    const bonuses = calculateObservationBonuses(obs);
-    
-    for (const { rarity, bonus } of bonuses) {
-      // Global accumulator
-      if (!globalAccumulator[rarity]) {
-        globalAccumulator[rarity] = { total: 0, count: 0 };
-      }
-      globalAccumulator[rarity].total += bonus;
-      globalAccumulator[rarity].count += 1;
-
-      // Type-specific accumulator
-      const typeKey = `${obs.type_id}-${rarity}`;
-      if (!typeAccumulator[typeKey]) {
-        typeAccumulator[typeKey] = { total: 0, count: 0 };
-      }
-      typeAccumulator[typeKey].total += bonus;
-      typeAccumulator[typeKey].count += 1;
-    }
-  }
-
-  // Calculate global averages
-  const globalAverages: Record<string, { bonus: number; count: number }> = {};
-  for (const [rarity, acc] of Object.entries(globalAccumulator)) {
-    globalAverages[rarity] = {
-      bonus: acc.total / acc.count,
-      count: acc.count
-    };
-  }
-
-  // Calculate type-specific averages
-  const typeAverages: TypeRarityAverage[] = [];
-  for (const [key, acc] of Object.entries(typeAccumulator)) {
-    const [typeIdStr, rarity] = key.split("-");
-    const type_id = parseInt(typeIdStr);
-    typeAverages.push({
-      type_id,
-      rarity,
-      total_bonus: acc.total,
-      observation_count: acc.count,
-      avg_bonus: acc.total / acc.count
-    });
-  }
-
-  console.log(`✅ Calculated averages for ${Object.keys(globalAverages).length} global rarities`);
-  console.log(`✅ Calculated averages for ${typeAverages.length} type-specific combinations`);
-
-  return {
-    globalAverages,
-    typeAverages,
-    observationsProcessed: observations.length
+  const learnedValues: Record<string, DeducedValue[]> = {
+    Gris: [], Singuliere: [], Rare: [], Epique: [], Legendaire: [], Secrete: []
   };
-}
 
-/**
- * Apply learning results to database
- */
-async function applyLearningResults(results: {
-  globalAverages: Record<string, { bonus: number; count: number }>;
-  typeAverages: TypeRarityAverage[];
-}): Promise<void> {
-  console.log("💾 Applying learning results to database...");
+  const mixedObs: ObservationData[] = [];
 
-  // Update global part_weights
-  for (const [rarity, data] of Object.entries(results.globalAverages)) {
-    const { error } = await supabase
-      .from("part_weights")
-      .update({
-        bonus_price_min_avg: data.bonus,
-        observation_count: data.count
-      })
-      .eq("rarity", rarity);
-
-    if (error) {
-      console.error(`Error updating part_weights for ${rarity}:`, error);
-      throw error;
-    }
-  }
-
-  // Clear and repopulate part_weights_by_type
-  await supabase.from("part_weights_by_type").delete().neq("type_id", 0);
-
-  for (const typeAvg of results.typeAverages) {
-    const { error } = await supabase
-      .from("part_weights_by_type")
-      .insert({
-        type_id: typeAvg.type_id,
-        part_rarity: typeAvg.rarity,
-        bonus_price_min_avg: typeAvg.avg_bonus,
-        observation_count: typeAvg.observation_count
+  // PHASE 1 : Observations PURES (1 seule rareté)
+  for (const obs of observations) {
+    const rarities = Object.keys(obs.parts);
+    if (rarities.length === 0) continue; // Stock
+    
+    if (rarities.length === 1) {
+      const rarity = rarities[0];
+      const count = obs.parts[rarity];
+      const bonusPriceMin = obs.price_min_total - obs.base_price_min;
+      const bonusPriceX2 = obs.price_x2_total - obs.base_price_x2;
+      const bonusRep = obs.rep_total - obs.base_reputation;
+      
+      learnedValues[rarity].push({
+        priceMin: bonusPriceMin / count,
+        priceX2: bonusPriceX2 / count,
+        rep: bonusRep / count,
+        count: 1
       });
-
-    if (error) {
-      console.error(`Error inserting type average:`, error);
-      throw error;
+      console.log(`[Pure] ${count}x ${rarity} -> 1 ${rarity} = ${Math.round(bonusPriceMin / count)}€ (Min) | ${Math.round(bonusPriceX2 / count)}€ (x2)`);
+    } else {
+      mixedObs.push(obs);
     }
   }
 
-  console.log("✅ Database updated successfully");
+  // Fonction pour obtenir les moyennes actuelles
+  const getKnownAverages = () => {
+    const avgs: Record<string, { priceMin: number, priceX2: number, rep: number, count: number }> = {};
+    for (const [rarity, values] of Object.entries(learnedValues)) {
+      if (values.length > 0) {
+        avgs[rarity] = {
+          priceMin: values.reduce((a, b) => a + b.priceMin, 0) / values.length,
+          priceX2: values.reduce((a, b) => a + b.priceX2, 0) / values.length,
+          rep: values.reduce((a, b) => a + b.rep, 0) / values.length,
+          count: values.length
+        };
+      }
+    }
+    return avgs;
+  };
+
+  // PHASE 2 : Déduction en cascade (observations mixtes)
+  // 3 passages pour résoudre les dépendances en chaîne
+  for (let iteration = 0; iteration < 3; iteration++) {
+    const knowns = getKnownAverages();
+    let deductionsMade = false;
+    
+    for (const obs of mixedObs) {
+      const rarities = Object.keys(obs.parts);
+      const unknowns = rarities.filter(r => knowns[r] === undefined);
+      
+      // Si on connaît TOUTES les pièces sauf UNE, on peut la déduire !
+      if (unknowns.length === 1) {
+        const unknownRarity = unknowns[0];
+        const unknownCount = obs.parts[unknownRarity];
+        
+        let knownBonusPriceMin = 0;
+        let knownBonusPriceX2 = 0;
+        let knownBonusRep = 0;
+        
+        for (const r of rarities) {
+          if (r !== unknownRarity) {
+            knownBonusPriceMin += obs.parts[r] * knowns[r].priceMin;
+            knownBonusPriceX2 += obs.parts[r] * knowns[r].priceX2;
+            knownBonusRep += obs.parts[r] * knowns[r].rep;
+          }
+        }
+        
+        const totalBonusPriceMin = obs.price_min_total - obs.base_price_min;
+        const totalBonusPriceX2 = obs.price_x2_total - obs.base_price_x2;
+        const totalBonusRep = obs.rep_total - obs.base_reputation;
+        
+        const deducedPriceMin = (totalBonusPriceMin - knownBonusPriceMin) / unknownCount;
+        const deducedPriceX2 = (totalBonusPriceX2 - knownBonusPriceX2) / unknownCount;
+        const deducedRep = (totalBonusRep - knownBonusRep) / unknownCount;
+        
+        learnedValues[unknownRarity].push({
+          priceMin: deducedPriceMin,
+          priceX2: deducedPriceX2,
+          rep: deducedRep,
+          count: 1
+        });
+        
+        console.log(`[Déduction Iter ${iteration+1}] Config Mixte -> 1 ${unknownRarity} = ${Math.round(deducedPriceMin)}€ (Min) | ${Math.round(deducedPriceX2)}€ (x2)`);
+        knowns[unknownRarity] = { priceMin: deducedPriceMin, priceX2: deducedPriceX2, rep: deducedRep, count: 1 };
+        deductionsMade = true;
+      }
+    }
+    if (!deductionsMade) break;
+  }
+
+  return getKnownAverages();
 }
 
-/**
- * Complete learning workflow - run algorithm and update DB
- */
 export async function runCompleteLearning(): Promise<void> {
+  console.log("🚀 Lancement des 5 algorithmes d'apprentissage indépendants...");
+
   try {
-    const results = await runLearningAlgorithm();
-    await applyLearningResults(results);
-    console.log(`🎓 Learning complete! Processed ${results.observationsProcessed} observations.`);
+    const { data: rawObs, error } = await supabase
+      .from("observations")
+      .select(`
+        *,
+        cars!inner(
+          id,
+          base_price_min,
+          type_id
+        )
+      `)
+      .not("price_min_total", "is", null)
+      .not("price_x2", "is", null);
+
+    if (error) throw error;
+
+    // Mapping des observations
+    const observations: ObservationData[] = rawObs.map(obs => {
+      const parts: Record<string, number> = {};
+      const addPart = (rarity: string | null) => {
+        if (rarity && rarity !== "Stock") parts[rarity] = (parts[rarity] || 0) + 1;
+      };
+      
+      addPart(obs.engine_rarity);
+      addPart(obs.clutch_rarity);
+      addPart(obs.turbo1_rarity);
+      addPart(obs.turbo2_rarity);
+      addPart(obs.suspension1_rarity);
+      addPart(obs.suspension2_rarity);
+      addPart(obs.transmission_rarity);
+      addPart(obs.tires_rarity);
+
+      return {
+        id: obs.id,
+        car_id: obs.car_id,
+        type_id: obs.cars.type_id,
+        base_price_min: obs.cars.base_price_min || 0,
+        base_price_x2: 0, // À déterminer
+        price_min_total: obs.price_min_total || 0,
+        price_x2_total: obs.price_x2 || 0,
+        rep_total: obs.rep_total || 0,
+        base_reputation: 0,
+        parts
+      };
+    });
+
+    // Déterminer les valeurs de base (Stock) pour chaque voiture
+    const stockObsByCarId: Record<number, { rep: number, priceX2: number }> = {};
+    observations.forEach(o => {
+      if (Object.keys(o.parts).length === 0) {
+        stockObsByCarId[o.car_id] = {
+          rep: o.rep_total,
+          priceX2: o.price_x2_total
+        };
+      }
+    });
+    
+    observations.forEach(o => {
+      if (stockObsByCarId[o.car_id]) {
+        o.base_reputation = stockObsByCarId[o.car_id].rep;
+        o.base_price_x2 = stockObsByCarId[o.car_id].priceX2;
+      }
+    });
+
+    // Séparation STRICTE par type
+    const obsByTypeId: Record<number, ObservationData[]> = {
+      1: [], 2: [], 3: [], 4: [], 5: []
+    };
+    
+    observations.forEach(obs => {
+      if (obsByTypeId[obs.type_id]) obsByTypeId[obs.type_id].push(obs);
+    });
+
+    // Exécution des 5 algorithmes
+    const typeResults: Record<number, Record<string, { priceMin: number, priceX2: number, rep: number, count: number }>> = {};
+    
+    typeResults[1] = runAlgorithmForCarType(1, "Singulière", obsByTypeId[1]);
+    typeResults[2] = runAlgorithmForCarType(2, "Rare", obsByTypeId[2]);
+    typeResults[3] = runAlgorithmForCarType(3, "Epique", obsByTypeId[3]);
+    typeResults[4] = runAlgorithmForCarType(4, "Légendaire", obsByTypeId[4]);
+    typeResults[5] = runAlgorithmForCarType(5, "Secrète", obsByTypeId[5]);
+
+    // Enregistrement en BDD
+    console.log("💾 Mise à jour de la base de données...");
+    
+    await supabase.from("part_weights_by_type").delete().neq("car_type_id", 0);
+
+    for (const [typeIdStr, rarities] of Object.entries(typeResults)) {
+      const typeId = parseInt(typeIdStr);
+      for (const [rarity, data] of Object.entries(rarities)) {
+        if (isNaN(data.priceMin) || data.priceMin < 0) continue;
+        if (isNaN(data.priceX2) || data.priceX2 < 0) continue;
+
+        await supabase.from("part_weights_by_type").insert({
+          car_type_id: typeId,
+          part_rarity: rarity,
+          bonus_price_min_avg: Math.round(data.priceMin),
+          bonus_price_x2_avg: Math.round(data.priceX2),
+          bonus_reputation_avg: Math.round(data.rep),
+          observation_count: data.count
+        });
+      }
+    }
+
+    console.log("✅ Apprentissage terminé avec succès !");
   } catch (error) {
-    console.error("❌ Learning failed:", error);
+    console.error("❌ Échec de l'apprentissage:", error);
     throw error;
   }
 }
