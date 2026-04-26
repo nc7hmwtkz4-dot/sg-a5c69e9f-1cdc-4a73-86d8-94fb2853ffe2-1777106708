@@ -149,13 +149,13 @@ export default function Simulateur() {
       .limit(1)
       .maybeSingle();
 
-    if (matchingObs && matchingObs.price_min_total) {
-      console.log("Found matching observation by reputation!");
+    if (matchingObs && matchingObs.price_min_total && matchingObs.price_x2) {
+      console.log("Found EXACT matching observation by reputation!");
       const carType = selectedModel.car_types;
       const priceMin = matchingObs.price_min_total;
       const priceMax = priceMin + (carType?.gap_max_min || 0);
       const priceReco = priceMin + (carType?.gap_reco_min || 0);
-      const priceX2 = matchingObs.price_x2 || (priceMin + (matchingObs.rep_total * (carType?.k_multiplier_avg || 2.3)));
+      const priceX2 = matchingObs.price_x2;
 
       setPrices({
         min: Math.round(priceMin),
@@ -169,7 +169,7 @@ export default function Simulateur() {
       return;
     }
 
-    // ML estimation - use type-specific weights when available
+    // ML estimation - use type-specific weights
     const carTypeId = selectedModel.type_id;
     const typeWeights = partWeightsByType[carTypeId] || {};
     
@@ -178,7 +178,8 @@ export default function Simulateur() {
     console.log("Part configuration:", parts);
     
     let totalBonusRep = 0;
-    let totalBonusPrice = 0;
+    let totalBonusPriceMin = 0;
+    let totalBonusPriceX2 = 0;
     const observationCounts: { [key: string]: number } = {};
     let usedTypeSpecific = false;
 
@@ -187,20 +188,24 @@ export default function Simulateur() {
         // Try type-specific weights first
         if (typeWeights[rarity]) {
           const repBonus = typeWeights[rarity].bonus_reputation_avg || 0;
-          const priceBonus = typeWeights[rarity].bonus_price_min_avg || 0;
-          console.log(`Part ${index} (${rarity}): Using TYPE-SPECIFIC - Rep: +${repBonus}, Price: +${priceBonus}`);
+          const priceMinBonus = typeWeights[rarity].bonus_price_min_avg || 0;
+          const priceX2Bonus = typeWeights[rarity].bonus_price_x2_avg || 0;
+          console.log(`Part ${index} (${rarity}): TYPE-SPECIFIC - Rep: +${repBonus}, Min: +${priceMinBonus}, x2: +${priceX2Bonus}`);
           totalBonusRep += repBonus;
-          totalBonusPrice += priceBonus;
+          totalBonusPriceMin += priceMinBonus;
+          totalBonusPriceX2 += priceX2Bonus;
           observationCounts[rarity] = typeWeights[rarity].observation_count || 0;
           usedTypeSpecific = true;
         } 
         // Fallback to global weights
         else if (partWeights[rarity]) {
           const repBonus = partWeights[rarity].bonus_reputation_avg || 0;
-          const priceBonus = partWeights[rarity].bonus_price_min_avg || 0;
-          console.log(`Part ${index} (${rarity}): Using GLOBAL - Rep: +${repBonus}, Price: +${priceBonus}`);
-          totalBonusRep += partWeights[rarity].bonus_reputation_avg || 0;
-          totalBonusPrice += partWeights[rarity].bonus_price_min_avg || 0;
+          const priceMinBonus = partWeights[rarity].bonus_price_min_avg || 0;
+          const priceX2Bonus = partWeights[rarity].bonus_price_x2_avg || 0;
+          console.log(`Part ${index} (${rarity}): GLOBAL - Rep: +${repBonus}, Min: +${priceMinBonus}, x2: +${priceX2Bonus}`);
+          totalBonusRep += repBonus;
+          totalBonusPriceMin += priceMinBonus;
+          totalBonusPriceX2 += priceX2Bonus;
           observationCounts[rarity] = partWeights[rarity].observation_count || 0;
         } else {
           console.warn(`Part ${index} (${rarity}): NO WEIGHTS FOUND!`);
@@ -211,16 +216,12 @@ export default function Simulateur() {
     const basePrice = selectedModel.base_price_min || 0;
     const carType = selectedModel.car_types;
 
-    const priceMin = basePrice + totalBonusPrice;
+    const priceMin = basePrice + totalBonusPriceMin;
     const totalRep = baseRep + totalBonusRep;
     const priceMax = priceMin + (carType?.gap_max_min || 0);
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
     
-    // Fix priceX2 calculation
-    // Calculate the base x2 multiplier from the stock observation if it exists, or fallback to the average
-    let kMultiplier = carType?.k_multiplier_avg || 2.3;
-    
-    // Fetch the base observation to get its real x2 price as a starting point
+    // Get base x2 price from stock observation
     let basePriceX2 = 0;
     try {
       const { data: stockObs } = await supabase
@@ -233,34 +234,21 @@ export default function Simulateur() {
         
       if (stockObs && stockObs.price_x2) {
         basePriceX2 = stockObs.price_x2;
-        // The bonus added for x2 should scale with the reputation added, relative to the min price bonus
-        // or just use a derived multiplier for the added reputation
-        kMultiplier = (stockObs.price_x2 - basePrice) / baseRep;
-        // Fallback to a reasonable default if the math is weird
-        if (isNaN(kMultiplier) || kMultiplier <= 0 || kMultiplier > 500) {
-          kMultiplier = carType?.k_multiplier_avg || 2.3;
-        }
       }
     } catch (e) {
       console.error("Error fetching stock obs for x2 base", e);
     }
 
-    // New formula: If we have a base x2 price, start from there and add the bonus.
-    // The bonus for x2 price should at least be equal to the min price bonus.
-    let priceX2;
-    if (basePriceX2 > 0) {
-      // The x2 value scales slightly faster than the min price value based on added reputation
-      const x2Bonus = totalBonusPrice + (totalBonusRep * kMultiplier);
-      priceX2 = basePriceX2 + x2Bonus;
-    } else {
-      // Fallback if no base observation exists
-      priceX2 = priceMin + (totalRep * kMultiplier);
-    }
+    // Calculate x2 using learned bonuses
+    const priceX2 = basePriceX2 > 0 ? basePriceX2 + totalBonusPriceX2 : priceMin * 1.2;
     
     console.log("ML Calculation Summary:");
-    console.log("- Base Price:", basePrice);
-    console.log("- Total Bonus Price:", totalBonusPrice);
+    console.log("- Base Price Min:", basePrice);
+    console.log("- Total Bonus Price Min:", totalBonusPriceMin);
     console.log("- Final Price Min:", priceMin);
+    console.log("- Base Price x2:", basePriceX2);
+    console.log("- Total Bonus Price x2:", totalBonusPriceX2);
+    console.log("- Final Price x2:", priceX2);
     console.log("- Base Rep:", baseRep);
     console.log("- Total Bonus Rep:", totalBonusRep);
     console.log("- Final Rep:", totalRep);
