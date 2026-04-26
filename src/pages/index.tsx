@@ -56,12 +56,12 @@ export default function Home() {
       {/* Main Content */}
       <main className="container py-8 space-y-8">
         {/* Hero Section */}
-        <section className="text-center space-y-4 py-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground font-display">
-            Prix Précis, Données Communautaires
+        <section className="container pt-20 pb-16 text-center">
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent font-display">
+            TROUVEZ LES PRIX DE VOTRE VEHICULE
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Plateforme d'intelligence de marché qui apprend de chaque observation pour fournir les estimations les plus précises.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            Vous vous êtes déjà demandé si le prix que propose un vendeur est correct? Vous avez galéré en faisant des allers-retours entre le marché d'occasion et le concessionnaire pour vérifier le prix du x2? Vous avez déjà subi une arnaque à l'achat d'un véhicule? Alors cette application est faite pour vous!
           </p>
         </section>
 
