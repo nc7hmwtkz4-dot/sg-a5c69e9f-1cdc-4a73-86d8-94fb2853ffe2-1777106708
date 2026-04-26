@@ -140,12 +140,20 @@ export default function Home() {
           </Card>
         </section>
 
-        {/* Donation Section - HIDDEN (change false to true to show) */}
-        {false && (
-          <section className="max-w-2xl mx-auto">
-            <DonationButtons />
-          </section>
-        )}
+        {/* Support Section */}
+        <section className="container py-16">
+          <Card className="border-border/50 backdrop-blur-sm bg-card/80 max-w-3xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl font-display">Soutenez le Projet</CardTitle>
+              <CardDescription className="text-base mt-3">
+                OSCar Evaluation est gratuit, votre participation nous aide à couvrir les frais d'hébergement et à continuer d'améliorer la plateforme, et développer de nouvelles fonctionnalités
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DonationButtons />
+            </CardContent>
+          </Card>
+        </section>
 
         {/* How It Works */}
         <section className="max-w-4xl mx-auto text-center space-y-4">
