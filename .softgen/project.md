@@ -6,19 +6,22 @@ Transform tedious manual price tracking into a data-driven system that learns fr
 **Current Database:** 28 brands, 100+ models, 100+ real observations training the learning algorithm.
 
 ## Design
+**Dark Premium Automotive** — Inspired by modern dark interfaces with automotive racing aesthetics
+
 **Colors:**
-- `--primary: 220 90% 25%` (deep navy - data authority)
+- `--background: 220 30% 8%` (deep marine black - premium depth)
+- `--foreground: 0 0% 98%` (pearl white - high contrast)
+- `--primary: 220 90% 55%` (electric blue - tech authority)
 - `--accent: 25 95% 53%` (racing orange - energy & CTAs)
-- `--background: 0 0% 98%` (pearl white)
-- `--foreground: 220 25% 15%` (dark slate)
-- `--muted: 220 15% 92%` (light gray panels)
-- `--card: 0 0% 100%` (pure white)
+- `--card: 220 25% 12%` (dark slate cards with glassmorphism)
+- `--muted: 220 20% 25%` (medium gray - subtle elements)
+- `--border: 220 30% 18%` (subtle borders with glow effects)
 
 **Typography:**
 - Headings: Chakra Petch (700) — angular, automotive-inspired
-- Body: Inter (400, 600) — data readability
+- Body: Inter (400, 600) — premium readability
 
-**Style:** Card-based layouts, subtle elevation, color-coded rarity badges, clean form inputs, real-time calculation displays
+**Style:** Dark glassmorphism cards, subtle glows, generous spacing, centered layouts, premium depth effects, gradient accents
 
 ## Features
 - **Manual Data Entry**: Simple form for entering vehicle characteristics (brand, model, reputation, price, parts rarity)
