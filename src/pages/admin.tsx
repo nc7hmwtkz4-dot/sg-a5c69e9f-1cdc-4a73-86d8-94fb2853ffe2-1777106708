@@ -31,7 +31,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Administration Eco-Sim</h1>
+          <h1 className="text-4xl font-bold mb-2">Administration OSCar Evaluation</h1>
           <p className="text-muted-foreground">
             Gestion de l'algorithme d'apprentissage et des données
           </p>
