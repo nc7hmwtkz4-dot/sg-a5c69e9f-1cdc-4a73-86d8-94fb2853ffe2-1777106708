@@ -143,13 +143,7 @@ export default function Home() {
         {/* Support Section */}
         <section className="container py-16">
           <Card className="border-border/50 backdrop-blur-sm bg-card/80 max-w-3xl mx-auto">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-display">Soutenez le Projet</CardTitle>
-              <CardDescription className="text-base mt-3">
-                OSCar Evaluation est gratuit, votre participation nous aide à couvrir les frais d'hébergement et à continuer d'améliorer la plateforme, et développer de nouvelles fonctionnalités
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <DonationButtons />
             </CardContent>
           </Card>
