@@ -1,8 +1,8 @@
-<![CDATA[{
+{
   "app.title": "OSCar Evaluation",
   "app.subtitle": "Automotive Market Intelligence",
   "home.hero.title": "FIND YOUR VEHICLE'S PRICES",
-  "home.hero.description": "Have you ever wondered if a seller's price is fair? Have you struggled going back and forth between the used car market and the dealership to check the x2 price? Have you ever been scammed when buying a vehicle? Then this application is for you!",
+  "home.hero.description": "Have you ever wondered if a seller's price is fair? Have you struggled going back and forth between the used car market and the dealership to check the liquidation price? Have you ever been scammed when buying a vehicle? Then this application is for you!",
   "home.simulator.title": "Simulator",
   "home.simulator.description": "Accurate estimates based on 100+ real observations",
   "home.simulator.feature1": "Brand & model selection",
@@ -119,4 +119,3 @@
   "rarity.plural.Legendaire": "Legendaries",
   "rarity.plural.Secrete": "Secrets"
 }
-]]
