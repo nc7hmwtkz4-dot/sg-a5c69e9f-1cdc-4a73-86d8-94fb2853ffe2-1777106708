@@ -6,8 +6,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DonationButtons } from "@/components/DonationButtons";
 import { StickyBottomAd } from "@/components/AdSense";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Home() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     carCount: 0,
     observationCount: 0,
@@ -43,13 +46,16 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card shadow-sm">
-        <div className="container py-4">
-          <h1 className="text-2xl font-bold text-primary font-display">
-            OSCar Evaluation
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Intelligence de marché automobile
-          </p>
+        <div className="container py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-primary font-display">
+              {t("app.title")}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {t("app.subtitle")}
+            </p>
+          </div>
+          <LanguageSelector />
         </div>
       </header>
 
@@ -58,10 +64,10 @@ export default function Home() {
         {/* Hero Section */}
         <section className="container pt-20 pb-16 text-center">
           <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent font-display">
-            TROUVEZ LES PRIX DE VOTRE VEHICULE
+            {t("home.hero.title")}
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Vous vous êtes déjà demandé si le prix que propose un vendeur est correct? Vous avez galéré en faisant des allers-retours entre le marché d'occasion et le concessionnaire pour vérifier le prix du x2? Vous avez déjà subi une arnaque à l'achat d'un véhicule? Alors cette application est faite pour vous!
+            {t("home.hero.description")}
           </p>
         </section>
 
@@ -74,34 +80,34 @@ export default function Home() {
                 <div className="p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <Calculator className="w-6 h-6 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-display">Simulateur</CardTitle>
+                <CardTitle className="text-2xl font-display">{t("home.simulator.title")}</CardTitle>
               </div>
               <CardDescription className="text-base">
-                Estimations précises basées sur 100+ observations réelles
+                {t("home.simulator.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">•</span>
-                  <span>Sélection marque & modèle</span>
+                  <span>{t("home.simulator.feature1")}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">•</span>
-                  <span>8 sélecteurs de rareté de pièces</span>
+                  <span>{t("home.simulator.feature2")}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">•</span>
-                  <span>Prix Min, Max, Reco & x2 en temps réel</span>
+                  <span>{t("home.simulator.feature3")}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-0.5">•</span>
-                  <span>Indicateurs de confiance</span>
+                  <span>{t("home.simulator.feature4")}</span>
                 </li>
               </ul>
               <Link href="/simulateur">
                 <Button className="w-full group-hover:bg-primary group-hover:shadow-lg group-hover:shadow-primary/50 transition-all">
-                  Lancer le Simulateur
+                  {t("home.simulator.button")}
                 </Button>
               </Link>
             </CardContent>
@@ -117,7 +123,7 @@ export default function Home() {
                   {stats.loading ? "..." : stats.carCount}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Véhicules Référencés
+                  {t("home.stats.vehicles")}
                 </div>
               </div>
               <div>
@@ -125,7 +131,7 @@ export default function Home() {
                   {stats.loading ? "..." : stats.observationCount}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Observations Validées
+                  {t("home.stats.observations")}
                 </div>
               </div>
               <div>
@@ -133,7 +139,7 @@ export default function Home() {
                   100%
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Open Source
+                  {t("home.stats.opensource")}
                 </div>
               </div>
             </div>
@@ -151,27 +157,27 @@ export default function Home() {
 
         {/* How It Works */}
         <section className="max-w-4xl mx-auto text-center space-y-4">
-          <h2 className="text-2xl font-bold font-display">Comment ça marche ?</h2>
+          <h2 className="text-2xl font-bold font-display">{t("home.howto.title")}</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="p-6 space-y-3">
               <div className="text-4xl">📝</div>
-              <h3 className="font-bold font-display">1. Saisissez</h3>
+              <h3 className="font-bold font-display">{t("home.howto.step1.title")}</h3>
               <p className="text-sm text-muted-foreground">
-                Renseignez les caractéristiques de votre véhicule
+                {t("home.howto.step1.description")}
               </p>
             </Card>
             <Card className="p-6 space-y-3">
               <div className="text-4xl">🔄</div>
-              <h3 className="font-bold font-display">2. Contribuez</h3>
+              <h3 className="font-bold font-display">{t("home.howto.step2.title")}</h3>
               <p className="text-sm text-muted-foreground">
-                Vos données enrichissent la base communautaire
+                {t("home.howto.step2.description")}
               </p>
             </Card>
             <Card className="p-6 space-y-3">
               <div className="text-4xl">📊</div>
-              <h3 className="font-bold font-display">3. Simulez</h3>
+              <h3 className="font-bold font-display">{t("home.howto.step3.title")}</h3>
               <p className="text-sm text-muted-foreground">
-                Obtenez des estimations précises basées sur des données réelles
+                {t("home.howto.step3.description")}
               </p>
             </Card>
           </div>
@@ -183,7 +189,7 @@ export default function Home() {
         <div className="container py-8 space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              © 2026 OSCar Evaluation. Alimenté par la communauté.
+              {t("home.footer.copyright")}
             </div>
             {/* Donation Buttons - HIDDEN (change false to true to show) */}
             {false && (

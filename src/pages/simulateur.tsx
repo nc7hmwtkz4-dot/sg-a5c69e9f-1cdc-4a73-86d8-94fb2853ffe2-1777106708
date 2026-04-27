@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { HorizontalAd, SidebarAd } from "@/components/AdSense";
 import { DonationButtons } from "@/components/DonationButtons";
 import { supabase } from "@/integrations/supabase/client";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Rarity = "Stock" | "Gris" | "Singuliere" | "Rare" | "Epique" | "Legendaire" | "Secrete";
 
@@ -24,17 +26,6 @@ interface Prices {
   observationDetails: string;
   isExactMatch?: boolean;
 }
-
-const PART_NAMES = [
-  "Moteur",
-  "Embrayage",
-  "Turbo 1",
-  "Turbo 2",
-  "Suspension 1",
-  "Suspension 2",
-  "Transmission",
-  "Pneus"
-];
 
 const RARITIES: Rarity[] = ["Stock", "Gris", "Singuliere", "Rare", "Epique", "Legendaire", "Secrete"];
 
@@ -59,6 +50,7 @@ const getRarityColorClass = (rarity: Rarity): string => {
 };
 
 export default function Simulateur() {
+  const { t } = useLanguage();
   const [brands, setBrands] = useState<string[]>([]);
   const [models, setModels] = useState<any[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>("");
@@ -68,6 +60,17 @@ export default function Simulateur() {
   const [partWeights, setPartWeights] = useState<any>({});
   const [partWeightsByType, setPartWeightsByType] = useState<any>({});
   const { toast } = useToast();
+
+  const PART_NAMES = [
+    t("simulator.parts.engine"),
+    t("simulator.parts.clutch"),
+    t("simulator.parts.turbo1"),
+    t("simulator.parts.turbo2"),
+    t("simulator.parts.suspension1"),
+    t("simulator.parts.suspension2"),
+    t("simulator.parts.transmission"),
+    t("simulator.parts.tires")
+  ];
 
   useEffect(() => {
     loadBrands();
@@ -111,11 +114,9 @@ export default function Simulateur() {
       
       setPartWeights(weights);
       
-      // Organize weights by type for easier lookup
-      // Use car_type_id directly from the database row
       const organizedByType: any = {};
       weightsByType.forEach((w: any) => {
-        const typeId = w.car_type_id; // Use car_type_id directly, not nested object
+        const typeId = w.car_type_id;
         if (!organizedByType[typeId]) {
           organizedByType[typeId] = {};
         }
@@ -143,8 +144,6 @@ export default function Simulateur() {
     console.log("Calculating prices for:", selectedModel.model);
     console.log("Parts configuration:", parts);
 
-    // CRITICAL - INTELLIGENT MATCHING BASED ON REPUTATION
-    // Calculate expected total reputation from parts configuration
     const baseRep = selectedModel.base_reputation || 0;
     let bonusRep = 0;
     
@@ -158,7 +157,6 @@ export default function Simulateur() {
     
     console.log("Expected reputation:", expectedRepTotal);
 
-    // Search for observation with same vehicle AND matching reputation (±50 tolerance)
     const { data: matchingObs } = await supabase
       .from("observations")
       .select("*")
@@ -174,7 +172,6 @@ export default function Simulateur() {
       const carType = selectedModel.car_types;
       const priceMin = matchingObs.price_min_total;
       
-      // Use observation values if available, otherwise calculate from car_types
       const priceMax = matchingObs.price_max || (priceMin + (carType?.gap_max_min || 0));
       const priceReco = matchingObs.price_reco || (priceMin + (carType?.gap_reco_min || 0));
       const priceX2 = matchingObs.price_x2;
@@ -185,13 +182,12 @@ export default function Simulateur() {
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
         confidence: "exact",
-        observationDetails: `Configuration observée (${matchingObs.rep_total} réputation) - Valeurs exactes`,
+        observationDetails: `${t("simulator.observation.exact")} (${matchingObs.rep_total} ${t("simulator.observation.exact.suffix")}`,
         isExactMatch: true,
       });
       return;
     }
 
-    // ML estimation - use type-specific weights
     const carTypeId = selectedModel.type_id;
     const typeWeights = partWeightsByType[carTypeId] || {};
     
@@ -207,7 +203,6 @@ export default function Simulateur() {
 
     parts.forEach((rarity, index) => {
       if (rarity !== "Stock") {
-        // Try type-specific weights first
         if (typeWeights[rarity]) {
           const repBonus = typeWeights[rarity].bonus_reputation_avg || 0;
           const priceMinBonus = typeWeights[rarity].bonus_price_min_avg || 0;
@@ -219,7 +214,6 @@ export default function Simulateur() {
           observationCounts[rarity] = typeWeights[rarity].observation_count || 0;
           usedTypeSpecific = true;
         } 
-        // Fallback to global weights
         else if (partWeights[rarity]) {
           const repBonus = partWeights[rarity].bonus_reputation_avg || 0;
           const priceMinBonus = partWeights[rarity].bonus_price_min_avg || 0;
@@ -243,7 +237,6 @@ export default function Simulateur() {
     const priceMax = priceMin + (carType?.gap_max_min || 0);
     const priceReco = priceMin + (carType?.gap_reco_min || 0);
     
-    // Get base x2 price from stock observation
     let basePriceX2 = 0;
     try {
       const { data: stockObs } = await supabase
@@ -261,8 +254,6 @@ export default function Simulateur() {
       console.error("Error fetching stock obs for x2 base", e);
     }
 
-    // Calculate x2 using learned bonuses
-    // CRITICAL: k_multiplier applies ONLY to base stock price, not price with part bonuses
     const basePriceX2Stock = basePriceX2 > 0 ? basePriceX2 : (basePrice * (carType?.k_multiplier_avg || 2.3));
     const priceX2 = basePriceX2Stock + totalBonusPriceX2;
     
@@ -279,7 +270,6 @@ export default function Simulateur() {
     console.log("- Final Rep:", totalRep);
     console.log("- Used Type-Specific:", usedTypeSpecific);
 
-    // Calculate confidence based on observation counts
     const counts = Object.values(observationCounts).filter(c => c > 0);
     const minObservations = counts.length > 0 ? Math.min(...counts) : 0;
     
@@ -294,32 +284,31 @@ export default function Simulateur() {
       confidence = "very-low";
     }
 
-    // Build observation details message
     let observationDetails = "";
     if (usedTypeSpecific) {
-      observationDetails = `Estimation ML (${carType?.name || "type spécifique"})`;
+      observationDetails = `${t("simulator.observation.ml.specific")} (${carType?.name || "type spécifique"})`;
     } else {
-      observationDetails = "Estimation ML (moyennes globales)";
+      observationDetails = t("simulator.observation.ml.global");
     }
 
     const rarityLabels: { [key: string]: string } = {
-      "Gris": "Gris",
-      "Singuliere": "Singulières",
-      "Rare": "Rares",
-      "Epique": "Épiques",
-      "Legendaire": "Légendaires",
-      "Secrete": "Secrètes"
+      "Gris": t("rarity.plural.Gris"),
+      "Singuliere": t("rarity.plural.Singuliere"),
+      "Rare": t("rarity.plural.Rare"),
+      "Epique": t("rarity.plural.Epique"),
+      "Legendaire": t("rarity.plural.Legendaire"),
+      "Secrete": t("rarity.plural.Secrete")
     };
 
     const obsDetails = Object.entries(observationCounts)
       .filter(([_, count]) => count > 0)
-      .map(([rarity, count]) => `${count} obs ${rarityLabels[rarity] || rarity}`)
+      .map(([rarity, count]) => `${count} ${t("simulator.observation.obs")} ${rarityLabels[rarity] || rarity}`)
       .join(" + ");
 
     if (obsDetails) {
       observationDetails += ` • ${obsDetails}`;
     } else {
-      observationDetails += " • Pas d'observations pour ces pièces";
+      observationDetails += ` • ${t("simulator.observation.nodata")}`;
     }
 
     console.log("ML Estimation:", {
@@ -340,7 +329,7 @@ export default function Simulateur() {
       observationDetails,
       isExactMatch: false,
     });
-  }, [selectedModel, parts, partWeights, partWeightsByType]);
+  }, [selectedModel, parts, partWeights, partWeightsByType, t]);
 
   useEffect(() => {
     if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
@@ -357,8 +346,8 @@ export default function Simulateur() {
   const copyPrice = (price: number) => {
     navigator.clipboard.writeText(price.toLocaleString("fr-FR"));
     toast({
-      title: "Prix copié !",
-      description: `${price.toLocaleString("fr-FR")} € copié dans le presse-papiers`,
+      title: t("simulator.copied.title"),
+      description: `${price.toLocaleString("fr-FR")} € ${t("simulator.copied.description")}`,
     });
   };
 
@@ -371,31 +360,31 @@ export default function Simulateur() {
       case "exact":
         return (
           <Badge className="bg-green-600 hover:bg-green-700">
-            ✓ Observation exacte
+            {t("simulator.confidence.exact")}
           </Badge>
         );
       case "high":
         return (
           <Badge variant="default" className="bg-green-500">
-            🟢 Confiance haute
+            {t("simulator.confidence.high")}
           </Badge>
         );
       case "medium":
         return (
           <Badge variant="secondary" className="bg-yellow-500 text-white">
-            🟡 Confiance moyenne
+            {t("simulator.confidence.medium")}
           </Badge>
         );
       case "low":
         return (
           <Badge variant="destructive" className="bg-orange-500">
-            🟠 Confiance basse
+            {t("simulator.confidence.low")}
           </Badge>
         );
       case "very-low":
         return (
           <Badge variant="destructive">
-            🔴 Confiance très basse
+            {t("simulator.confidence.verylow")}
           </Badge>
         );
       default:
@@ -406,15 +395,18 @@ export default function Simulateur() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour
-            </Button>
-          </Link>
-          <h1 className="text-4xl font-bold font-display mb-2">Simulateur de Prix</h1>
-          <p className="text-muted-foreground">Estimation en temps réel basée sur {Object.keys(partWeights).length > 0 ? "88+ observations réelles" : "..."}</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1">
+            <Link href="/">
+              <Button variant="ghost" className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t("simulator.back")}
+              </Button>
+            </Link>
+            <h1 className="text-4xl font-bold font-display mb-2">{t("simulator.title")}</h1>
+            <p className="text-muted-foreground">{t("simulator.subtitle")}</p>
+          </div>
+          <LanguageSelector />
         </div>
 
         <div className="grid lg:grid-cols-[1fr_300px] gap-6">
@@ -425,17 +417,17 @@ export default function Simulateur() {
                   <Calculator className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold font-display">Configuration</h2>
-                  <p className="text-sm text-muted-foreground">Sélectionnez votre véhicule et vos pièces</p>
+                  <h2 className="text-xl font-bold font-display">{t("simulator.configuration")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("simulator.configuration.subtitle")}</p>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Marque</label>
+                  <label className="block text-sm font-medium mb-2">{t("simulator.brand")}</label>
                   <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez une marque" />
+                      <SelectValue placeholder={t("simulator.brand.placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {brands.map((brand) => (
@@ -448,7 +440,7 @@ export default function Simulateur() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Modèle</label>
+                  <label className="block text-sm font-medium mb-2">{t("simulator.model")}</label>
                   <Select
                     value={selectedModel?.id?.toString()}
                     onValueChange={(value) => {
@@ -458,7 +450,7 @@ export default function Simulateur() {
                     disabled={!selectedBrand}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez un modèle" />
+                      <SelectValue placeholder={t("simulator.model.placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {models.map((model) => (
@@ -472,7 +464,7 @@ export default function Simulateur() {
               </div>
 
               <div>
-                <h3 className="font-medium mb-4">Pièces</h3>
+                <h3 className="font-medium mb-4">{t("simulator.parts")}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {PART_NAMES.map((partName, index) => (
                     <div key={index}>
@@ -488,7 +480,7 @@ export default function Simulateur() {
                               value={rarity}
                               className={getRarityColorClass(rarity)}
                             >
-                              {rarity}
+                              {t(`rarity.${rarity}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -503,7 +495,7 @@ export default function Simulateur() {
               <Card className="p-6 space-y-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h2 className="text-xl font-bold font-display mb-2">Estimations</h2>
+                    <h2 className="text-xl font-bold font-display mb-2">{t("simulator.estimates.title")}</h2>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Info className="h-4 w-4 flex-shrink-0" />
                       <p>{prices.observationDetails}</p>
@@ -514,7 +506,7 @@ export default function Simulateur() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Card className="p-4 border-2 border-green-500/20 bg-green-500/5">
-                    <p className="text-sm text-muted-foreground mb-1">Prix Min</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t("simulator.estimates.min")}</p>
                     <p className="text-2xl font-bold text-green-600">{formatPrice(prices.min)}</p>
                     <Button
                       variant="ghost"
@@ -523,12 +515,12 @@ export default function Simulateur() {
                       className="mt-2 w-full"
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copier
+                      {t("simulator.copy")}
                     </Button>
                   </Card>
 
                   <Card className="p-4 border-2 border-blue-500/20 bg-blue-500/5">
-                    <p className="text-sm text-muted-foreground mb-1">Prix Reco</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t("simulator.estimates.reco")}</p>
                     <p className="text-2xl font-bold text-blue-600">{formatPrice(prices.reco)}</p>
                     <Button
                       variant="ghost"
@@ -537,12 +529,12 @@ export default function Simulateur() {
                       className="mt-2 w-full"
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copier
+                      {t("simulator.copy")}
                     </Button>
                   </Card>
 
                   <Card className="p-4 border-2 border-purple-500/20 bg-purple-500/5">
-                    <p className="text-sm text-muted-foreground mb-1">Prix Max</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t("simulator.estimates.max")}</p>
                     <p className="text-2xl font-bold text-purple-600">{formatPrice(prices.max)}</p>
                     <Button
                       variant="ghost"
@@ -551,12 +543,12 @@ export default function Simulateur() {
                       className="mt-2 w-full"
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copier
+                      {t("simulator.copy")}
                     </Button>
                   </Card>
 
                   <Card className="p-4 border-2 border-orange-500/20 bg-orange-500/5">
-                    <p className="text-sm text-muted-foreground mb-1">Prix x2</p>
+                    <p className="text-sm text-muted-foreground mb-1">{t("simulator.estimates.x2")}</p>
                     <p className="text-2xl font-bold text-orange-600">{formatPrice(prices.x2)}</p>
                     <Button
                       variant="ghost"
@@ -565,7 +557,7 @@ export default function Simulateur() {
                       className="mt-2 w-full"
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copier
+                      {t("simulator.copy")}
                     </Button>
                   </Card>
                 </div>

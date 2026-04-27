@@ -15,15 +15,15 @@ Implémenter un système complet d'internationalisation pour supporter le franç
 Contexte : Site de simulation de prix automobile avec formulaires, tableaux de données et interface administrative.
 
 ## Checklist
-- [ ] Créer le contexte LanguageContext avec provider
-- [ ] Créer les fichiers de traductions (fr.json, en.json, es.json)
-- [ ] Créer le composant LanguageSelector (dropdown en haut à droite)
-- [ ] Traduire la page d'accueil (index.tsx)
-- [ ] Traduire le simulateur (simulateur.tsx)
+- [x] Créer le contexte LanguageContext avec provider
+- [x] Créer les fichiers de traductions (fr.json, en.json, es.json)
+- [x] Créer le composant LanguageSelector (dropdown en haut à droite)
+- [x] Traduire la page d'accueil (index.tsx)
+- [x] Traduire le simulateur (simulateur.tsx)
 - [ ] Traduire la page upload (upload.tsx)
 - [ ] Traduire la page admin (admin.tsx)
-- [ ] Intégrer le provider dans _app.tsx
-- [ ] Ajouter le LanguageSelector dans toutes les pages
+- [x] Intégrer le provider dans _app.tsx
+- [x] Ajouter le LanguageSelector dans toutes les pages
 - [ ] Tester les 3 langues et la persistance dans localStorage
 
 ## Acceptance
