@@ -1,6 +1,6 @@
 ---
 title: Système d'internationalisation (FR/EN/ES)
-status: in_progress
+status: done
 priority: high
 type: feature
 tags: [i18n, ux]
@@ -20,11 +20,11 @@ Contexte : Site de simulation de prix automobile avec formulaires, tableaux de d
 - [x] Créer le composant LanguageSelector (dropdown en haut à droite)
 - [x] Traduire la page d'accueil (index.tsx)
 - [x] Traduire le simulateur (simulateur.tsx)
-- [ ] Traduire la page upload (upload.tsx)
-- [ ] Traduire la page admin (admin.tsx)
+- [x] Traduire la page upload (upload.tsx)
+- [x] Traduire la page admin (admin.tsx)
 - [x] Intégrer le provider dans _app.tsx
 - [x] Ajouter le LanguageSelector dans toutes les pages
-- [ ] Tester les 3 langues et la persistance dans localStorage
+- [x] Tester les 3 langues et la persistance dans localStorage
 
 ## Acceptance
 - Le sélecteur de langue est visible en haut à droite sur toutes les pages

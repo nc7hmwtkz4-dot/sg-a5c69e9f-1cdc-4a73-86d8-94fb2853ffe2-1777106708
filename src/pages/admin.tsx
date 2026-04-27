@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Brain, Database, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { runCompleteLearning } from "@/services/learningEngineService";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function AdminPage() {
+  const { t } = useLanguage();
   const [isLearning, setIsLearning] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -12,15 +15,15 @@ export default function AdminPage() {
   const handleRunLearning = async () => {
     setIsLearning(true);
     setStatus("idle");
-    setMessage("Analyse des observations en cours...");
+    setMessage(t("admin.learning.analyzing"));
 
     try {
       await runCompleteLearning();
       setStatus("success");
-      setMessage("✅ Apprentissage terminé avec succès ! Les moyennes ont été mises à jour.");
+      setMessage(t("admin.learning.success"));
     } catch (error) {
       setStatus("error");
-      setMessage(`❌ Erreur lors de l'apprentissage : ${error}`);
+      setMessage(`${t("admin.learning.error")} ${error}`);
       console.error(error);
     } finally {
       setIsLearning(false);
@@ -30,33 +33,36 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Administration OSCar Evaluation</h1>
-          <p className="text-muted-foreground">
-            Gestion de l'algorithme d'apprentissage et des données
-          </p>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold mb-2">{t("admin.title")}</h1>
+            <p className="text-muted-foreground">
+              {t("admin.subtitle")}
+            </p>
+          </div>
+          <LanguageSelector />
         </div>
 
         <Card className="p-6 space-y-6">
           <div className="flex items-center gap-3">
             <Brain className="w-8 h-8 text-primary" />
             <div>
-              <h2 className="text-2xl font-semibold">Algorithme d'Apprentissage</h2>
+              <h2 className="text-2xl font-semibold">{t("admin.learning.title")}</h2>
               <p className="text-sm text-muted-foreground">
-                Analyse toutes les observations pour calculer les moyennes pondérées des bonus de pièces
+                {t("admin.learning.subtitle")}
               </p>
             </div>
           </div>
 
           <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
             <p>
-              <strong>Fonctionnement :</strong>
+              <strong>{t("admin.learning.how")}</strong>
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>Charge toutes les observations de la base de données</li>
-              <li>Utilise les poids du PRD pour distribuer les bonus proportionnellement</li>
-              <li>Calcule les moyennes globales ET par type de véhicule</li>
-              <li>Met à jour <code>part_weights</code> et <code>part_weights_by_type</code></li>
+              <li>{t("admin.learning.step1")}</li>
+              <li>{t("admin.learning.step2")}</li>
+              <li>{t("admin.learning.step3")}</li>
+              <li>{t("admin.learning.step4")}</li>
             </ul>
           </div>
 
@@ -69,12 +75,12 @@ export default function AdminPage() {
             {isLearning ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Apprentissage en cours...
+                {t("admin.learning.running")}
               </>
             ) : (
               <>
                 <Database className="w-5 h-5 mr-2" />
-                Lancer l'Apprentissage
+                {t("admin.learning.button")}
               </>
             )}
           </Button>
@@ -98,17 +104,16 @@ export default function AdminPage() {
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Informations</h3>
+          <h3 className="text-lg font-semibold mb-4">{t("admin.info.title")}</h3>
           <div className="space-y-2 text-sm">
             <p>
-              <strong>Base de données :</strong> PostgreSQL via Supabase
+              <strong>{t("admin.info.database")}</strong>
             </p>
             <p>
-              <strong>Tables utilisées :</strong> observations, cars, car_types, part_weights,
-              part_weights_by_type
+              <strong>{t("admin.info.tables")}</strong>
             </p>
             <p>
-              <strong>Algorithme :</strong> Moyenne pondérée cumulative (PRD page 7-8)
+              <strong>{t("admin.info.algorithm")}</strong>
             </p>
           </div>
         </Card>

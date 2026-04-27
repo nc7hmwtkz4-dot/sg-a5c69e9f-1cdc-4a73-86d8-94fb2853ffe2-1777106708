@@ -11,19 +11,10 @@ import { carService } from "@/services/carService";
 import { observationService } from "@/services/observationService";
 import { useToast } from "@/hooks/use-toast";
 import { DonationButtons } from "@/components/DonationButtons";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Rarity = "Stock" | "Gris" | "Singulière" | "Rare" | "Épique" | "Légendaire" | "Secrète";
-
-const PART_NAMES = [
-  "Moteur",
-  "Embrayage",
-  "Turbo 1",
-  "Turbo 2",
-  "Suspension 1",
-  "Suspension 2",
-  "Transmission",
-  "Pneus"
-];
 
 const RARITIES: { name: Rarity; color: string }[] = [
   { name: "Stock", color: "bg-gray-200 hover:bg-gray-300 border-gray-400" },
@@ -35,6 +26,7 @@ const RARITIES: { name: Rarity; color: string }[] = [
 ];
 
 export default function UploadPage() {
+  const { t } = useLanguage();
   const [brands, setBrands] = useState<string[]>([]);
   const [models, setModels] = useState<any[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>("");
@@ -47,6 +39,17 @@ export default function UploadPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const { toast } = useToast();
 
+  const PART_NAMES = [
+    t("simulator.parts.engine"),
+    t("simulator.parts.clutch"),
+    t("simulator.parts.turbo1"),
+    t("simulator.parts.turbo2"),
+    t("simulator.parts.suspension1"),
+    t("simulator.parts.suspension2"),
+    t("simulator.parts.transmission"),
+    t("simulator.parts.tires")
+  ];
+
   useEffect(() => {
     console.log("🚀 Composant UploadPage monté, chargement des marques...");
     const loadBrands = async () => {
@@ -57,14 +60,14 @@ export default function UploadPage() {
       } catch (error) {
         console.error("❌ Erreur lors du chargement des marques:", error);
         toast({
-          title: "Erreur",
-          description: "Impossible de charger les marques",
+          title: t("upload.error.submit"),
+          description: t("upload.error.brands"),
           variant: "destructive",
         });
       }
     };
     loadBrands();
-  }, [toast]);
+  }, [toast, t]);
 
   const loadModels = async (brand: string) => {
     console.log("🔄 Chargement des modèles pour la marque:", brand);
@@ -76,8 +79,8 @@ export default function UploadPage() {
     } catch (error) {
       console.error("❌ Erreur lors du chargement des modèles:", error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les modèles",
+        title: t("upload.error.submit"),
+        description: t("upload.error.models"),
         variant: "destructive",
       });
     }
@@ -92,8 +95,8 @@ export default function UploadPage() {
   const handleSubmit = async () => {
     if (!selectedModel || !reputation || !priceMin || !priceX2) {
       toast({
-        title: "Données manquantes",
-        description: "Veuillez remplir tous les champs obligatoires (y compris Prix x2)",
+        title: t("upload.error.missing"),
+        description: t("upload.error.missing.desc"),
         variant: "destructive",
       });
       return;
@@ -119,8 +122,8 @@ export default function UploadPage() {
 
       setShowSuccess(true);
       toast({
-        title: "✅ Contribution validée !",
-        description: "Merci d'avoir contribué aux données communautaires",
+        title: t("upload.toast.validated"),
+        description: t("upload.toast.validated.desc"),
       });
 
       setTimeout(() => {
@@ -134,8 +137,8 @@ export default function UploadPage() {
       }, 2000);
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Impossible d'enregistrer l'observation",
+        title: t("upload.error.submit"),
+        description: t("upload.error.submit.desc"),
         variant: "destructive",
       });
     } finally {
@@ -150,9 +153,9 @@ export default function UploadPage() {
           <div className="w-16 h-16 rounded-full bg-green-100 mx-auto flex items-center justify-center">
             <Check className="w-8 h-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold font-display">Merci !</h2>
+          <h2 className="text-2xl font-bold font-display">{t("upload.success.title")}</h2>
           <p className="text-muted-foreground">
-            Votre contribution a été ajoutée avec succès. L'algorithme d'apprentissage a mis à jour ses prédictions.
+            {t("upload.success.message")}
           </p>
         </Card>
       </div>
@@ -162,21 +165,24 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card shadow-sm">
-        <div className="container py-4 flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-primary font-display">
-              Ajouter une Observation
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Contribuer aux données communautaires
-            </p>
+        <div className="container py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {t("upload.back")}
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-primary font-display">
+                {t("upload.title")}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {t("upload.subtitle")}
+              </p>
+            </div>
           </div>
+          <LanguageSelector />
         </div>
       </header>
 
@@ -187,19 +193,19 @@ export default function UploadPage() {
               <Database className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <h2 className="text-xl font-bold font-display">Saisie Manuelle</h2>
+              <h2 className="text-xl font-bold font-display">{t("upload.form.title")}</h2>
               <p className="text-sm text-muted-foreground">
-                Renseignez les caractéristiques de votre véhicule
+                {t("upload.form.subtitle")}
               </p>
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Marque *</Label>
+              <Label>{t("upload.brand")} *</Label>
               <Select value={selectedBrand} onValueChange={handleBrandChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir une marque" />
+                  <SelectValue placeholder={t("upload.brand.placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {brands.map(brand => (
@@ -212,14 +218,14 @@ export default function UploadPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Modèle *</Label>
+              <Label>{t("upload.model")} *</Label>
               <Select 
                 value={selectedModel?.id?.toString() || ""} 
                 onValueChange={(id) => setSelectedModel(models.find(m => m.id.toString() === id))}
                 disabled={!selectedBrand}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir un modèle" />
+                  <SelectValue placeholder={t("upload.model.placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {models.map(model => (
@@ -234,20 +240,20 @@ export default function UploadPage() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Réputation Totale *</Label>
+              <Label>{t("upload.reputation")} *</Label>
               <Input
                 type="number"
-                placeholder="Ex: 22100"
+                placeholder={t("upload.reputation.placeholder")}
                 value={reputation}
                 onChange={(e) => setReputation(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Prix Min VM *</Label>
+              <Label>{t("upload.price.min")} *</Label>
               <Input
                 type="number"
-                placeholder="Ex: 23500000"
+                placeholder={t("upload.price.min.placeholder")}
                 value={priceMin}
                 onChange={(e) => setPriceMin(e.target.value)}
               />
@@ -255,20 +261,20 @@ export default function UploadPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Prix x2 *</Label>
+            <Label>{t("upload.price.x2")} *</Label>
             <Input
               type="number"
-              placeholder="Ex: 26000000"
+              placeholder={t("upload.price.x2.placeholder")}
               value={priceX2}
               onChange={(e) => setPriceX2(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Le prix affiché dans le jeu avec le multiplicateur x2 activé
+              {t("upload.price.x2.hint")}
             </p>
           </div>
 
           <div className="space-y-3">
-            <Label>Pièces (Cliquez pour sélectionner la rareté)</Label>
+            <Label>{t("upload.parts")}</Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {PART_NAMES.map((name, index) => (
                 <div key={name} className="space-y-2">
@@ -306,7 +312,7 @@ export default function UploadPage() {
             disabled={isSubmitting}
             className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
           >
-            {isSubmitting ? "Envoi en cours..." : "Valider & Contribuer"}
+            {isSubmitting ? t("upload.submitting") : t("upload.submit")}
           </Button>
         </Card>
 
