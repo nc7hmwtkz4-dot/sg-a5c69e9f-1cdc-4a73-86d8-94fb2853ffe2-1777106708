@@ -262,13 +262,14 @@ export default function Simulateur() {
     }
 
     // Calculate x2 using learned bonuses
-    const priceX2 = basePriceX2 > 0 ? basePriceX2 + totalBonusPriceX2 : (priceMin * 1.2) + totalBonusPriceX2;
+    const priceX2 = basePriceX2 > 0 ? basePriceX2 + totalBonusPriceX2 : (priceMin * (carType?.k_multiplier_avg || 2.3)) + totalBonusPriceX2;
     
     console.log("ML Calculation Summary:");
     console.log("- Base Price Min:", basePrice);
     console.log("- Total Bonus Price Min:", totalBonusPriceMin);
     console.log("- Final Price Min:", priceMin);
     console.log("- Base Price x2:", basePriceX2);
+    console.log("- K Multiplier:", carType?.k_multiplier_avg || 2.3);
     console.log("- Total Bonus Price x2:", totalBonusPriceX2);
     console.log("- Final Price x2:", priceX2);
     console.log("- Base Rep:", baseRep);
