@@ -241,6 +241,39 @@ export async function runCompleteLearning(): Promise<void> {
       }
     }
 
+    // CRITICAL: Calculate and update k_multiplier_avg for each car type
+    // k_multiplier = average(price_x2 / price_min) for STOCK observations
+    console.log("📊 Calcul des multiplicateurs k par type de voiture...");
+    
+    for (const typeId of [1, 2, 3, 4, 5]) {
+      const stockObsForType = obsByTypeId[typeId].filter(o => Object.keys(o.parts).length === 0);
+      
+      if (stockObsForType.length > 0) {
+        const kValues: number[] = [];
+        
+        stockObsForType.forEach(obs => {
+          if (obs.base_price_min > 0 && obs.price_x2_total > 0) {
+            const k = obs.price_x2_total / obs.base_price_min;
+            kValues.push(k);
+          }
+        });
+        
+        if (kValues.length > 0) {
+          const kAvg = kValues.reduce((a, b) => a + b, 0) / kValues.length;
+          
+          await supabase
+            .from("car_types")
+            .update({
+              k_multiplier_avg: kAvg,
+              k_observation_count: kValues.length
+            })
+            .eq("id", typeId);
+          
+          console.log(`Type ${typeId}: k_multiplier = ${kAvg.toFixed(2)} (${kValues.length} obs stock)`);
+        }
+      }
+    }
+
     console.log("✅ Apprentissage terminé avec succès !");
   } catch (error) {
     console.error("❌ Échec de l'apprentissage:", error);
