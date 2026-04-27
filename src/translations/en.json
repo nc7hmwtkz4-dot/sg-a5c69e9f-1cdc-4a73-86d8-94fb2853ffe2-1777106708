@@ -1,4 +1,4 @@
-{
+<![CDATA[{
   "app.title": "OSCar Evaluation",
   "app.subtitle": "Automotive Market Intelligence",
   "home.hero.title": "FIND YOUR VEHICLE'S PRICES",
@@ -7,7 +7,7 @@
   "home.simulator.description": "Accurate estimates based on 100+ real observations",
   "home.simulator.feature1": "Brand & model selection",
   "home.simulator.feature2": "8 part rarity selectors",
-  "home.simulator.feature3": "Real-time Min, Max, Reco & x2 prices",
+  "home.simulator.feature3": "Real-time Min, Max, Reco & liquidation prices",
   "home.simulator.feature4": "Confidence indicators",
   "home.simulator.button": "Launch Simulator",
   "home.stats.vehicles": "Referenced Vehicles",
@@ -43,7 +43,7 @@
   "simulator.estimates.min": "Min Price",
   "simulator.estimates.reco": "Reco Price",
   "simulator.estimates.max": "Max Price",
-  "simulator.estimates.x2": "x2 Price",
+  "simulator.estimates.x2": "Liquidation Price",
   "simulator.copy": "Copy",
   "simulator.copied.title": "Price copied!",
   "simulator.copied.description": "copied to clipboard",
@@ -71,16 +71,16 @@
   "upload.reputation.placeholder": "Ex: 22100",
   "upload.price.min": "Min VM Price",
   "upload.price.min.placeholder": "Ex: 23500000",
-  "upload.price.x2": "x2 Price",
+  "upload.price.x2": "Liquidation Price",
   "upload.price.x2.placeholder": "Ex: 26000000",
-  "upload.price.x2.hint": "The price displayed in the game with x2 multiplier activated",
+  "upload.price.x2.hint": "The price displayed in the game with the liquidation multiplier activated",
   "upload.parts": "Parts (Click to select rarity)",
   "upload.submit": "Validate & Contribute",
   "upload.submitting": "Submitting...",
   "upload.success.title": "Thank you!",
   "upload.success.message": "Your contribution has been added successfully. The learning algorithm has updated its predictions.",
   "upload.error.missing": "Missing data",
-  "upload.error.missing.desc": "Please fill in all required fields (including x2 Price)",
+  "upload.error.missing.desc": "Please fill in all required fields (including Liquidation Price)",
   "upload.error.submit": "Error",
   "upload.error.submit.desc": "Unable to save observation",
   "upload.error.brands": "Unable to load brands",
@@ -119,3 +119,4 @@
   "rarity.plural.Legendaire": "Legendaries",
   "rarity.plural.Secrete": "Secrets"
 }
+]]
