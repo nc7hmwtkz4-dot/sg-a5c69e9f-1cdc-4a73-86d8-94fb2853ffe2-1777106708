@@ -262,7 +262,7 @@ export default function Simulateur() {
     }
 
     // Calculate x2 using learned bonuses
-    const priceX2 = basePriceX2 > 0 ? basePriceX2 + totalBonusPriceX2 : priceMin * 1.2;
+    const priceX2 = basePriceX2 > 0 ? basePriceX2 + totalBonusPriceX2 : (priceMin * 1.2) + totalBonusPriceX2;
     
     console.log("ML Calculation Summary:");
     console.log("- Base Price Min:", basePrice);
