@@ -239,16 +239,23 @@ export default function Simulateur() {
     
     let basePriceX2 = 0;
     try {
-      const { data: stockObs } = await supabase
+      console.log("Fetching stock observation for car_id:", selectedModel.id, "model:", selectedModel.model);
+      
+      const { data: stockObs, error: stockError } = await supabase
         .from("observations")
         .select("price_x2")
         .eq("car_id", selectedModel.id)
         .order("rep_total", { ascending: true })
         .limit(1)
         .maybeSingle();
+      
+      console.log("Stock observation query result:", { data: stockObs, error: stockError });
         
       if (stockObs && stockObs.price_x2) {
         basePriceX2 = stockObs.price_x2;
+        console.log("Found base price x2 from observation:", basePriceX2);
+      } else {
+        console.log("No stock observation with price_x2 found, will use K multiplier fallback");
       }
     } catch (e) {
       console.error("Error fetching stock obs for x2 base", e);
