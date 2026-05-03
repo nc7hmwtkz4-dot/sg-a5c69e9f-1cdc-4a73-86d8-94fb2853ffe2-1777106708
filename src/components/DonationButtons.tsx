@@ -25,7 +25,7 @@ export function DonationButtons() {
           asChild
         >
           <a 
-            href="https://www.paypal.com/donate/?hosted_button_id=YOUR_PAYPAL_BUTTON_ID" 
+            href="https://paypal.me/aubertth" 
             target="_blank" 
             rel="noopener noreferrer"
           >
