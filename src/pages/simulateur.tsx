@@ -174,7 +174,43 @@ export default function Simulateur() {
       
       const priceMax = matchingObs.price_max || (priceMin + (carType?.gap_max_min || 0));
       const priceReco = matchingObs.price_reco || (priceMin + (carType?.gap_reco_min || 0));
-      const priceX2 = matchingObs.price_x2;
+      
+      // CORRECTION: Pour le prix x2, on doit partir de la base stock et ajouter les bonus
+      // Pas utiliser directement matchingObs.price_x2 car ça ignore les bonus de pièces
+      let basePriceX2 = 0;
+      try {
+        const { data: stockObs } = await supabase
+          .from("observations")
+          .select("price_x2")
+          .eq("car_id", selectedModel.id)
+          .order("rep_total", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        if (stockObs && stockObs.price_x2) {
+          basePriceX2 = stockObs.price_x2;
+        }
+      } catch (e) {
+        console.error("Error fetching stock obs for x2 base", e);
+      }
+      
+      // Calculer les bonus de pièces pour la config actuelle
+      let totalBonusPriceX2 = 0;
+      const carTypeId = selectedModel.type_id;
+      const typeWeights = partWeightsByType[carTypeId] || {};
+      
+      parts.forEach((rarity) => {
+        if (rarity !== "Stock") {
+          if (typeWeights[rarity]) {
+            totalBonusPriceX2 += typeWeights[rarity].bonus_price_x2_avg || 0;
+          } else if (partWeights[rarity]) {
+            totalBonusPriceX2 += partWeights[rarity].bonus_price_x2_avg || 0;
+          }
+        }
+      });
+      
+      const basePriceX2Stock = basePriceX2 > 0 ? basePriceX2 : (priceMin * (carType?.k_multiplier_avg || 1.0));
+      const priceX2 = basePriceX2Stock + totalBonusPriceX2;
 
       setPrices({
         min: Math.round(priceMin),
