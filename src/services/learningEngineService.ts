@@ -153,6 +153,17 @@ export async function runCompleteLearning(): Promise<void> {
 
     if (error) throw error;
 
+    const { data: carTypes, error: carTypesError } = await supabase
+      .from("car_types")
+      .select("id, k_multiplier_avg");
+
+    if (carTypesError) throw carTypesError;
+
+    const kMultiplierByType = (carTypes ?? []).reduce<Record<number, number>>((acc, carType) => {
+      acc[carType.id] = carType.k_multiplier_avg || 1;
+      return acc;
+    }, {});
+
     // Mapping des observations
     const observations: ObservationData[] = rawObs.map(obs => {
       const parts: Record<string, number> = {};
@@ -198,7 +209,15 @@ export async function runCompleteLearning(): Promise<void> {
       if (stockObsByCarId[o.car_id]) {
         o.base_reputation = stockObsByCarId[o.car_id].rep;
         o.base_price_x2 = stockObsByCarId[o.car_id].priceX2;
+        return;
       }
+
+      const fallbackK =
+        kMultiplierByType[o.type_id] && kMultiplierByType[o.type_id] > 0
+          ? kMultiplierByType[o.type_id]
+          : 1;
+
+      o.base_price_x2 = o.base_price_min * fallbackK;
     });
 
     // Séparation STRICTE par type
