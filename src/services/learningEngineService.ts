@@ -268,6 +268,10 @@ export async function runCompleteLearning(): Promise<void> {
       for (const [rarity, data] of Object.entries(rarities)) {
         if (isNaN(data.priceMin) || data.priceMin < 0) continue;
         if (isNaN(data.priceX2) || data.priceX2 < 0) continue;
+        if (data.count <= 1) {
+          console.log(`Skip sparse type bonus ${typeId}/${rarity}: ${data.count} signal`);
+          continue;
+        }
 
         await supabase.from("part_weights_by_type").insert({
           car_type_id: typeId,
@@ -326,9 +330,9 @@ export async function runCompleteLearning(): Promise<void> {
     };
 
     // Agréger tous les résultats par type pour calculer les moyennes globales
-    for (const [typeIdStr, rarities] of Object.entries(typeResults)) {
+    for (const [, rarities] of Object.entries(typeResults)) {
       for (const [rarity, data] of Object.entries(rarities)) {
-        if (globalAverages[rarity]) {
+        if (globalAverages[rarity] && data.count > 1) {
           globalAverages[rarity].priceMin.push(data.priceMin);
           globalAverages[rarity].priceX2.push(data.priceX2);
           globalAverages[rarity].rep.push(data.rep);
