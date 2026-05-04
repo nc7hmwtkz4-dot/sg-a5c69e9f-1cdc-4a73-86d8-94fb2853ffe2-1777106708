@@ -99,7 +99,7 @@ const getRarityColorClass = (rarity: Rarity): string => {
   }
 };
 
-const getStockBasePriceX2 = useCallback(async (carId: number) => {
+const getStockBasePriceX2 = async (carId: number) => {
   const { data, error } = await supabase
     .from("observations")
     .select("price_x2, rep_total, engine_rarity, clutch_rarity, turbo1_rarity, turbo2_rarity, suspension1_rarity, suspension2_rarity, transmission_rarity, tires_rarity")
@@ -112,7 +112,7 @@ const getStockBasePriceX2 = useCallback(async (carId: number) => {
 
   const stockObservation = (data || []).find((observation) => isStockObservation(observation));
   return stockObservation?.price_x2 || 0;
-}, []);
+};
 
 export default function Simulateur() {
   const { t } = useLanguage();

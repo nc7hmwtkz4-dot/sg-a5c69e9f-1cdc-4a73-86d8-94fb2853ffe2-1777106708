@@ -28,11 +28,6 @@ const RARITY_NORMALIZATION: Record<string, string> = {
   "Secrète": "Secrete",
 };
 
-function normalizeRarityLabel(rarity: string | null): string | null {
-  if (!rarity) return null;
-  return RARITY_NORMALIZATION[rarity] || rarity;
-}
-
 /**
  * 🚗 ALGORITHME D'APPRENTISSAGE PAR TYPE DE VOITURE
  * 
