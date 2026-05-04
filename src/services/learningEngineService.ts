@@ -20,6 +20,18 @@ interface DeducedValue {
   count: number;
 }
 
+const RARITY_NORMALIZATION: Record<string, string> = {
+  "Singulière": "Singuliere",
+  "Épique": "Epique",
+  "Légendaire": "Legendaire",
+  "Secrète": "Secrete",
+};
+
+function normalizeRarityLabel(rarity: string | null): string | null {
+  if (!rarity) return null;
+  return RARITY_NORMALIZATION[rarity] || rarity;
+}
+
 /**
  * 🚗 ALGORITHME D'APPRENTISSAGE PAR TYPE DE VOITURE
  * 
@@ -48,6 +60,10 @@ function runAlgorithmForCarType(typeId: number, typeName: string, observations: 
       const bonusPriceX2 = obs.price_x2_total - obs.base_price_x2;
       const bonusRep = obs.rep_total - obs.base_reputation;
       
+      if (!learnedValues[rarity]) {
+        learnedValues[rarity] = [];
+      }
+
       learnedValues[rarity].push({
         priceMin: bonusPriceMin / count,
         priceX2: bonusPriceX2 / count,
@@ -168,7 +184,10 @@ export async function runCompleteLearning(): Promise<void> {
     const observations: ObservationData[] = rawObs.map(obs => {
       const parts: Record<string, number> = {};
       const addPart = (rarity: string | null) => {
-        if (rarity && rarity !== "Stock") parts[rarity] = (parts[rarity] || 0) + 1;
+        const normalizedRarity = normalizeRarityLabel(rarity);
+        if (normalizedRarity && normalizedRarity !== "Stock") {
+          parts[normalizedRarity] = (parts[normalizedRarity] || 0) + 1;
+        }
       };
       
       addPart(obs.engine_rarity);
