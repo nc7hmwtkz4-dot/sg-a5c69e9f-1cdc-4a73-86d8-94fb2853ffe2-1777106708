@@ -274,6 +274,51 @@ export async function runCompleteLearning(): Promise<void> {
       }
     }
 
+    // CRITICAL: Calculate GLOBAL averages across all types and store in part_weights
+    console.log("\n📊 Calcul des moyennes GLOBALES pour part_weights...");
+    
+    const globalAverages: Record<string, { priceMin: number[], priceX2: number[], rep: number[], count: number }> = {
+      Gris: { priceMin: [], priceX2: [], rep: [], count: 0 },
+      Singuliere: { priceMin: [], priceX2: [], rep: [], count: 0 },
+      Rare: { priceMin: [], priceX2: [], rep: [], count: 0 },
+      Epique: { priceMin: [], priceX2: [], rep: [], count: 0 },
+      Legendaire: { priceMin: [], priceX2: [], rep: [], count: 0 },
+      Secrete: { priceMin: [], priceX2: [], rep: [], count: 0 }
+    };
+
+    // Agréger tous les résultats par type pour calculer les moyennes globales
+    for (const [typeIdStr, rarities] of Object.entries(typeResults)) {
+      for (const [rarity, data] of Object.entries(rarities)) {
+        if (globalAverages[rarity]) {
+          globalAverages[rarity].priceMin.push(data.priceMin);
+          globalAverages[rarity].priceX2.push(data.priceX2);
+          globalAverages[rarity].rep.push(data.rep);
+          globalAverages[rarity].count += data.count;
+        }
+      }
+    }
+
+    // Calculer et insérer les moyennes globales
+    await supabase.from("part_weights").delete().neq("rarity", "");
+
+    for (const [rarity, data] of Object.entries(globalAverages)) {
+      if (data.priceMin.length > 0) {
+        const avgPriceMin = data.priceMin.reduce((a, b) => a + b, 0) / data.priceMin.length;
+        const avgPriceX2 = data.priceX2.reduce((a, b) => a + b, 0) / data.priceX2.length;
+        const avgRep = data.rep.reduce((a, b) => a + b, 0) / data.rep.length;
+
+        await supabase.from("part_weights").insert({
+          rarity: rarity,
+          bonus_price_min_avg: Math.round(avgPriceMin),
+          bonus_price_x2_avg: Math.round(avgPriceX2),
+          bonus_reputation_avg: Math.round(avgRep),
+          observation_count: data.count
+        });
+
+        console.log(`Global ${rarity}: Min = ${Math.round(avgPriceMin)}€, x2 = ${Math.round(avgPriceX2)}€, Rep = ${Math.round(avgRep)} (${data.count} obs)`);
+      }
+    }
+
     console.log("✅ Apprentissage terminé avec succès !");
   } catch (error) {
     console.error("❌ Échec de l'apprentissage:", error);
