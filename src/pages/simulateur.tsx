@@ -195,6 +195,38 @@ export default function Simulateur() {
     }
   };
 
+  const resolveWeight = useCallback((carTypeId: number | null | undefined, rarity: Rarity) => {
+    if (!carTypeId || rarity === "Stock") {
+      return null;
+    }
+
+    const typeWeight = partWeightsByType[carTypeId]?.[rarity];
+    const globalWeight = partWeights[rarity];
+
+    if (typeWeight && (typeWeight.observation_count || 0) > 1) {
+      return {
+        weight: typeWeight,
+        source: "type",
+      };
+    }
+
+    if (globalWeight) {
+      return {
+        weight: globalWeight,
+        source: "global",
+      };
+    }
+
+    if (typeWeight) {
+      return {
+        weight: typeWeight,
+        source: "type",
+      };
+    }
+
+    return null;
+  }, [partWeights, partWeightsByType]);
+
   const calculatePrices = useCallback(async () => {
     if (!selectedModel) {
       console.log("No model selected");
@@ -209,12 +241,14 @@ export default function Simulateur() {
     console.log("Calculating prices for:", selectedModel.model);
     console.log("Parts configuration:", parts);
 
+    const carTypeId = selectedModel.type_id;
     const baseRep = selectedModel.base_reputation || 0;
     let bonusRep = 0;
     
     parts.forEach((rarity) => {
-      if (rarity !== "Stock" && partWeights[rarity]) {
-        bonusRep += partWeights[rarity].bonus_reputation_avg || 0;
+      const resolvedWeight = resolveWeight(carTypeId, rarity);
+      if (resolvedWeight) {
+        bonusRep += resolvedWeight.weight.bonus_reputation_avg || 0;
       }
     });
     
@@ -250,18 +284,12 @@ export default function Simulateur() {
         console.error("Error fetching stock obs for x2 base", e);
       }
       
-      // Calculer les bonus de pièces pour la config actuelle
       let totalBonusPriceX2 = 0;
-      const carTypeId = selectedModel.type_id;
-      const typeWeights = partWeightsByType[carTypeId] || {};
       
       parts.forEach((rarity) => {
-        if (rarity !== "Stock") {
-          if (typeWeights[rarity]) {
-            totalBonusPriceX2 += typeWeights[rarity].bonus_price_x2_avg || 0;
-          } else if (partWeights[rarity]) {
-            totalBonusPriceX2 += partWeights[rarity].bonus_price_x2_avg || 0;
-          }
+        const resolvedWeight = resolveWeight(carTypeId, rarity);
+        if (resolvedWeight) {
+          totalBonusPriceX2 += resolvedWeight.weight.bonus_price_x2_avg || 0;
         }
       });
       
@@ -280,7 +308,6 @@ export default function Simulateur() {
       return;
     }
 
-    const carTypeId = selectedModel.type_id;
     const typeWeights = partWeightsByType[carTypeId] || {};
     
     console.log("Car Type ID:", carTypeId);
@@ -294,30 +321,22 @@ export default function Simulateur() {
     let usedTypeSpecific = false;
 
     parts.forEach((rarity, index) => {
-      if (rarity !== "Stock") {
-        if (typeWeights[rarity]) {
-          const repBonus = typeWeights[rarity].bonus_reputation_avg || 0;
-          const priceMinBonus = typeWeights[rarity].bonus_price_min_avg || 0;
-          const priceX2Bonus = typeWeights[rarity].bonus_price_x2_avg || 0;
-          console.log(`Part ${index} (${rarity}): TYPE-SPECIFIC - Rep: +${repBonus}, Min: +${priceMinBonus}, x2: +${priceX2Bonus}`);
-          totalBonusRep += repBonus;
-          totalBonusPriceMin += priceMinBonus;
-          totalBonusPriceX2 += priceX2Bonus;
-          observationCounts[rarity] = typeWeights[rarity].observation_count || 0;
-          usedTypeSpecific = true;
-        } 
-        else if (partWeights[rarity]) {
-          const repBonus = partWeights[rarity].bonus_reputation_avg || 0;
-          const priceMinBonus = partWeights[rarity].bonus_price_min_avg || 0;
-          const priceX2Bonus = partWeights[rarity].bonus_price_x2_avg || 0;
-          console.log(`Part ${index} (${rarity}): GLOBAL - Rep: +${repBonus}, Min: +${priceMinBonus}, x2: +${priceX2Bonus}`);
-          totalBonusRep += repBonus;
-          totalBonusPriceMin += priceMinBonus;
-          totalBonusPriceX2 += priceX2Bonus;
-          observationCounts[rarity] = partWeights[rarity].observation_count || 0;
-        } else {
-          console.warn(`Part ${index} (${rarity}): NO WEIGHTS FOUND!`);
-        }
+      const resolvedWeight = resolveWeight(carTypeId, rarity);
+
+      if (resolvedWeight) {
+        const repBonus = resolvedWeight.weight.bonus_reputation_avg || 0;
+        const priceMinBonus = resolvedWeight.weight.bonus_price_min_avg || 0;
+        const priceX2Bonus = resolvedWeight.weight.bonus_price_x2_avg || 0;
+
+        console.log(`Part ${index} (${rarity}): ${resolvedWeight.source.toUpperCase()} - Rep: +${repBonus}, Min: +${priceMinBonus}, x2: +${priceX2Bonus}`);
+
+        totalBonusRep += repBonus;
+        totalBonusPriceMin += priceMinBonus;
+        totalBonusPriceX2 += priceX2Bonus;
+        observationCounts[rarity] = resolvedWeight.weight.observation_count || 0;
+        usedTypeSpecific = usedTypeSpecific || resolvedWeight.source === "type";
+      } else if (rarity !== "Stock") {
+        console.warn(`Part ${index} (${rarity}): NO WEIGHTS FOUND!`);
       }
     });
 
@@ -418,7 +437,7 @@ export default function Simulateur() {
       observationDetails,
       isExactMatch: false,
     });
-  }, [selectedModel, parts, partWeights, partWeightsByType, t, getStockBasePriceX2]);
+  }, [selectedModel, parts, partWeights, partWeightsByType, t, resolveWeight]);
 
   useEffect(() => {
     if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
