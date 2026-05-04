@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeRarityLabel } from "@/lib/rarity";
 
 interface ObservationData {
   id: number;
@@ -161,6 +162,7 @@ export async function runCompleteLearning(): Promise<void> {
         cars!inner(
           id,
           base_price_min,
+          base_reputation,
           type_id
         )
       `)
@@ -204,11 +206,11 @@ export async function runCompleteLearning(): Promise<void> {
         car_id: obs.car_id,
         type_id: obs.cars.type_id,
         base_price_min: obs.cars.base_price_min || 0,
-        base_price_x2: 0, // À déterminer
+        base_price_x2: 0,
         price_min_total: obs.price_min_total || 0,
         price_x2_total: obs.price_x2 || 0,
         rep_total: obs.rep_total || 0,
-        base_reputation: 0,
+        base_reputation: obs.cars.base_reputation || 0,
         parts
       };
     });

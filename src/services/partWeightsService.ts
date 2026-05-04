@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeRarityLabel } from "@/lib/rarity";
 
 export const partWeightsService = {
   async getAllWeights() {
@@ -12,7 +13,13 @@ export const partWeightsService = {
     const weightsMap: Record<string, any> = {};
     if (data) {
       data.forEach((w) => {
-        weightsMap[w.rarity] = w;
+        const rarityKey = normalizeRarityLabel(w.rarity);
+        if (rarityKey) {
+          weightsMap[rarityKey] = {
+            ...w,
+            rarity: rarityKey,
+          };
+        }
       });
     }
     
@@ -26,6 +33,12 @@ export const partWeightsService = {
       .order("observation_count", { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map((weight) => {
+      const rarityKey = normalizeRarityLabel(weight.rarity);
+      return {
+        ...weight,
+        rarity: rarityKey || weight.rarity,
+      };
+    });
   },
 };

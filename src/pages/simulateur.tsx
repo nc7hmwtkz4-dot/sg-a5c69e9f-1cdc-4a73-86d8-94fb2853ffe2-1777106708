@@ -29,6 +29,56 @@ interface Prices {
 
 const RARITIES: Rarity[] = ["Stock", "Gris", "Singuliere", "Rare", "Epique", "Legendaire", "Secrete"];
 
+const OBSERVATION_PART_FIELDS = [
+  "engine_rarity",
+  "clutch_rarity",
+  "turbo1_rarity",
+  "turbo2_rarity",
+  "suspension1_rarity",
+  "suspension2_rarity",
+  "transmission_rarity",
+  "tires_rarity"
+] as const;
+
+type ObservationPartField = (typeof OBSERVATION_PART_FIELDS)[number];
+
+interface ObservationMatch {
+  rep_total: number;
+  price_min_total: number | null;
+  price_x2: number | null;
+  price_max?: number | null;
+  price_reco?: number | null;
+  [key: string]: string | number | null | undefined;
+}
+
+const isStockObservation = (observation: Partial<Record<ObservationPartField, string | null>>) => {
+  return OBSERVATION_PART_FIELDS.every((field) => {
+    const rarity = observation[field];
+    return rarity === null || rarity === "Stock";
+  });
+};
+
+const getClosestObservation = <T extends { rep_total: number }>(observations: T[], targetRep: number): T | null => {
+  return observations.reduce<T | null>((closest, current) => {
+    if (!closest) {
+      return current;
+    }
+
+    const currentDiff = Math.abs(current.rep_total - targetRep);
+    const closestDiff = Math.abs(closest.rep_total - targetRep);
+
+    if (currentDiff < closestDiff) {
+      return current;
+    }
+
+    if (currentDiff === closestDiff && current.rep_total < closest.rep_total) {
+      return current;
+    }
+
+    return closest;
+  }, null);
+};
+
 // Helper function to get color class for each rarity
 const getRarityColorClass = (rarity: Rarity): string => {
   switch (rarity) {
@@ -48,6 +98,21 @@ const getRarityColorClass = (rarity: Rarity): string => {
       return ""; // Stock - no special color
   }
 };
+
+const getStockBasePriceX2 = useCallback(async (carId: number) => {
+  const { data, error } = await supabase
+    .from("observations")
+    .select("price_x2, rep_total, engine_rarity, clutch_rarity, turbo1_rarity, turbo2_rarity, suspension1_rarity, suspension2_rarity, transmission_rarity, tires_rarity")
+    .eq("car_id", carId)
+    .order("rep_total", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const stockObservation = (data || []).find((observation) => isStockObservation(observation));
+  return stockObservation?.price_x2 || 0;
+}, []);
 
 export default function Simulateur() {
   const { t } = useLanguage();
@@ -157,15 +222,18 @@ export default function Simulateur() {
     
     console.log("Expected reputation:", expectedRepTotal);
 
-    const { data: matchingObs } = await supabase
+    const { data: matchingObsCandidates, error: matchingObsError } = await supabase
       .from("observations")
       .select("*")
       .eq("car_id", selectedModel.id)
       .gte("rep_total", expectedRepTotal - 50)
-      .lte("rep_total", expectedRepTotal + 50)
-      .order("rep_total", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .lte("rep_total", expectedRepTotal + 50);
+
+    if (matchingObsError) {
+      console.error("Error loading exact observation:", matchingObsError);
+    }
+
+    const matchingObs = getClosestObservation<ObservationMatch>(matchingObsCandidates || [], expectedRepTotal);
 
     if (matchingObs && matchingObs.price_min_total && matchingObs.price_x2) {
       console.log("Found EXACT matching observation by reputation!");
@@ -175,21 +243,9 @@ export default function Simulateur() {
       const priceMax = matchingObs.price_max || (priceMin + (carType?.gap_max_min || 0));
       const priceReco = matchingObs.price_reco || (priceMin + (carType?.gap_reco_min || 0));
       
-      // CORRECTION: Pour le prix x2, on doit partir de la base stock et ajouter les bonus
-      // Pas utiliser directement matchingObs.price_x2 car ça ignore les bonus de pièces
       let basePriceX2 = 0;
       try {
-        const { data: stockObs } = await supabase
-          .from("observations")
-          .select("price_x2")
-          .eq("car_id", selectedModel.id)
-          .order("rep_total", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        
-        if (stockObs && stockObs.price_x2) {
-          basePriceX2 = stockObs.price_x2;
-        }
+        basePriceX2 = await getStockBasePriceX2(selectedModel.id);
       } catch (e) {
         console.error("Error fetching stock obs for x2 base", e);
       }
@@ -218,7 +274,7 @@ export default function Simulateur() {
         reco: Math.round(priceReco),
         x2: Math.round(priceX2),
         confidence: "exact",
-        observationDetails: `${t("simulator.observation.exact")} (${matchingObs.rep_total} ${t("simulator.observation.exact.suffix")}`,
+        observationDetails: `${t("simulator.observation.exact")} (${matchingObs.rep_total} ${t("simulator.observation.exact.suffix")})`,
         isExactMatch: true,
       });
       return;
@@ -276,20 +332,10 @@ export default function Simulateur() {
     let basePriceX2 = 0;
     try {
       console.log("Fetching stock observation for car_id:", selectedModel.id, "model:", selectedModel.model);
-      
-      const { data: stockObs, error: stockError } = await supabase
-        .from("observations")
-        .select("price_x2")
-        .eq("car_id", selectedModel.id)
-        .order("rep_total", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
-      console.log("Stock observation query result:", { data: stockObs, error: stockError });
-        
-      if (stockObs && stockObs.price_x2) {
-        basePriceX2 = stockObs.price_x2;
-        console.log("Found base price x2 from observation:", basePriceX2);
+      basePriceX2 = await getStockBasePriceX2(selectedModel.id);
+
+      if (basePriceX2 > 0) {
+        console.log("Found base price x2 from stock observation:", basePriceX2);
       } else {
         console.log("No stock observation with price_x2 found, will use K multiplier fallback");
       }
@@ -372,7 +418,7 @@ export default function Simulateur() {
       observationDetails,
       isExactMatch: false,
     });
-  }, [selectedModel, parts, partWeights, partWeightsByType, t]);
+  }, [selectedModel, parts, partWeights, partWeightsByType, t, getStockBasePriceX2]);
 
   useEffect(() => {
     if (selectedModel && partWeights && Object.keys(partWeights).length > 0) {
