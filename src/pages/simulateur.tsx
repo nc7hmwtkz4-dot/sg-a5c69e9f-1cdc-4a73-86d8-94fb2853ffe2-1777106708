@@ -51,6 +51,9 @@ interface ObservationMatch {
   [key: string]: string | number | null | undefined;
 }
 
+const MIN_TYPE_OBSERVATIONS = 2;
+const MIN_GLOBAL_OBSERVATIONS = 3;
+
 const isStockObservation = (observation: Partial<Record<ObservationPartField, string | null>>) => {
   return OBSERVATION_PART_FIELDS.every((field) => {
     const rarity = observation[field];
@@ -202,25 +205,20 @@ export default function Simulateur() {
 
     const typeWeight = partWeightsByType[carTypeId]?.[rarity];
     const globalWeight = partWeights[rarity];
+    const typeObservationCount = typeWeight?.observation_count || 0;
+    const globalObservationCount = globalWeight?.observation_count || 0;
 
-    if (typeWeight && (typeWeight.observation_count || 0) > 1) {
+    if (typeWeight && typeObservationCount >= MIN_TYPE_OBSERVATIONS) {
       return {
         weight: typeWeight,
         source: "type",
       };
     }
 
-    if (globalWeight) {
+    if (globalWeight && globalObservationCount >= MIN_GLOBAL_OBSERVATIONS) {
       return {
         weight: globalWeight,
         source: "global",
-      };
-    }
-
-    if (typeWeight) {
-      return {
-        weight: typeWeight,
-        source: "type",
       };
     }
 
