@@ -217,10 +217,14 @@ export async function runCompleteLearning(): Promise<void> {
     const stockObsByCarId: Record<number, { rep: number, priceX2: number }> = {};
     observations.forEach(o => {
       if (Object.keys(o.parts).length === 0) {
-        stockObsByCarId[o.car_id] = {
-          rep: o.rep_total,
-          priceX2: o.price_x2_total
-        };
+        const currentStock = stockObsByCarId[o.car_id];
+
+        if (!currentStock || o.rep_total < currentStock.rep) {
+          stockObsByCarId[o.car_id] = {
+            rep: o.rep_total,
+            priceX2: o.price_x2_total
+          };
+        }
       }
     });
     
