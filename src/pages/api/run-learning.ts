@@ -10,9 +10,7 @@ export default async function handler(
   }
 
   try {
-    console.log("🚀 Starting complete learning algorithm...");
     await runCompleteLearning();
-    console.log("✅ Learning completed successfully!");
     
     res.status(200).json({ 
       success: true, 

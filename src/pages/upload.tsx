@@ -10,7 +10,6 @@ import Link from "next/link";
 import { carService } from "@/services/carService";
 import { observationService } from "@/services/observationService";
 import { useToast } from "@/hooks/use-toast";
-import { DonationButtons } from "@/components/DonationButtons";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -51,11 +50,9 @@ export default function UploadPage() {
   ];
 
   useEffect(() => {
-    console.log("🚀 Composant UploadPage monté, chargement des marques...");
     const loadBrands = async () => {
       try {
         const brandsData = await carService.getBrands();
-        console.log("✅ Marques chargées:", brandsData);
         setBrands(brandsData);
       } catch (error) {
         console.error("❌ Erreur lors du chargement des marques:", error);
@@ -70,10 +67,8 @@ export default function UploadPage() {
   }, [toast, t]);
 
   const loadModels = async (brand: string) => {
-    console.log("🔄 Chargement des modèles pour la marque:", brand);
     try {
       const data = await carService.getModelsByBrand(brand);
-      console.log("✅ Modèles chargés:", data);
       setModels(data);
       setSelectedModel(null);
     } catch (error) {
@@ -87,7 +82,6 @@ export default function UploadPage() {
   };
 
   const handleBrandChange = (brand: string) => {
-    console.log("🎯 Marque sélectionnée:", brand);
     setSelectedBrand(brand);
     loadModels(brand);
   };
@@ -315,9 +309,6 @@ export default function UploadPage() {
             {isSubmitting ? t("upload.submitting") : t("upload.submit")}
           </Button>
         </Card>
-
-        {/* Donation Buttons - HIDDEN (change false to true to show) */}
-        {false && <DonationButtons />}
       </main>
     </div>
   );
