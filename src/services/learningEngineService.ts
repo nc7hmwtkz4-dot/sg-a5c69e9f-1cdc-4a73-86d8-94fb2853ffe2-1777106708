@@ -37,10 +37,7 @@ const RARITY_NORMALIZATION: Record<string, string> = {
  * Un algorithme indépendant pour chaque type (Singulière, Rare, Épique, Légendaire, Secrète)
  * Calcule les bonus de Prix Min ET Prix x2 pour chaque rareté de pièce
  */
-function runAlgorithmForCarType(typeId: number, typeName: string, observations: ObservationData[]) {
-  console.log(`\n=== 🚗 ALGORITHME ${typeId} : TYPE ${typeName.toUpperCase()} ===`);
-  console.log(`Analyse de ${observations.length} observations spécifiques...`);
-
+function runAlgorithmForCarType(_typeId: number, _typeName: string, observations: ObservationData[]) {
   const learnedValues: Record<string, DeducedValue[]> = {
     Gris: [], Singuliere: [], Rare: [], Epique: [], Legendaire: [], Secrete: []
   };
@@ -69,7 +66,6 @@ function runAlgorithmForCarType(typeId: number, typeName: string, observations: 
         rep: bonusRep / count,
         count: 1
       });
-      console.log(`[Pure] ${count}x ${rarity} -> 1 ${rarity} = ${Math.round(bonusPriceMin / count)}€ (Min) | ${Math.round(bonusPriceX2 / count)}€ (x2)`);
     } else {
       mixedObs.push(obs);
     }
@@ -138,7 +134,6 @@ function runAlgorithmForCarType(typeId: number, typeName: string, observations: 
           count: 1
         });
         
-        console.log(`[Déduction Iter ${iteration+1}] Config Mixte -> 1 ${unknownRarity} = ${Math.round(deducedPriceMin)}€ (Min) | ${Math.round(deducedPriceX2)}€ (x2)`);
         knowns[unknownRarity] = { priceMin: deducedPriceMin, priceX2: deducedPriceX2, rep: deducedRep, count: 1 };
         deductionsMade = true;
       }
@@ -272,7 +267,6 @@ export async function runCompleteLearning(): Promise<void> {
         if (isNaN(data.priceMin) || data.priceMin < 0) continue;
         if (isNaN(data.priceX2) || data.priceX2 < 0) continue;
         if (data.count < MIN_TYPE_SIGNAL_COUNT) {
-          console.log(`Skip sparse type bonus ${typeId}/${rarity}: ${data.count} signal`);
           continue;
         }
 

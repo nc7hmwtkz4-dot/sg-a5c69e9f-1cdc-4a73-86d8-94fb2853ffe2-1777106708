@@ -177,9 +177,6 @@ export default function Simulateur() {
       const weights = await partWeightsService.getAllWeights();
       const weightsByType = await partWeightsByTypeService.getAllWeightsByType();
       
-      console.log("Loaded global part weights:", weights);
-      console.log("Loaded type-specific weights:", weightsByType);
-      
       setPartWeights(weights);
       
       const organizedByType: any = {};
@@ -191,7 +188,6 @@ export default function Simulateur() {
         organizedByType[typeId][w.part_rarity] = w;
       });
       
-      console.log("Organized weights by type:", organizedByType);
       setPartWeightsByType(organizedByType);
     } catch (error) {
       console.error("Error loading part weights:", error);
@@ -227,17 +223,12 @@ export default function Simulateur() {
 
   const calculatePrices = useCallback(async () => {
     if (!selectedModel) {
-      console.log("No model selected");
       return;
     }
 
     if (!partWeights || Object.keys(partWeights).length === 0) {
-      console.log("No part weights loaded");
       return;
     }
-
-    console.log("Calculating prices for:", selectedModel.model);
-    console.log("Parts configuration:", parts);
 
     const carTypeId = selectedModel.type_id;
     const baseRep = selectedModel.base_reputation || 0;
@@ -251,8 +242,6 @@ export default function Simulateur() {
     });
     
     const expectedRepTotal = Math.round(baseRep + bonusRep);
-    
-    console.log("Expected reputation:", expectedRepTotal);
 
     const { data: matchingObsCandidates, error: matchingObsError } = await supabase
       .from("observations")
@@ -268,7 +257,6 @@ export default function Simulateur() {
     const matchingObs = getClosestObservation<ObservationMatch>(matchingObsCandidates || [], expectedRepTotal);
 
     if (matchingObs && matchingObs.price_min_total && matchingObs.price_x2) {
-      console.log("Found EXACT matching observation by reputation!");
       const carType = selectedModel.car_types;
       const priceMin = matchingObs.price_min_total;
       
@@ -308,17 +296,13 @@ export default function Simulateur() {
 
     const typeWeights = partWeightsByType[carTypeId] || {};
     
-    console.log("Car Type ID:", carTypeId);
-    console.log("Type-specific weights available:", typeWeights);
-    console.log("Part configuration:", parts);
-    
     let totalBonusRep = 0;
     let totalBonusPriceMin = 0;
     let totalBonusPriceX2 = 0;
     const observationCounts: { [key: string]: number } = {};
     let usedTypeSpecific = false;
 
-    parts.forEach((rarity, index) => {
+    parts.forEach((rarity) => {
       const resolvedWeight = resolveWeight(carTypeId, rarity);
 
       if (resolvedWeight) {
@@ -326,15 +310,11 @@ export default function Simulateur() {
         const priceMinBonus = resolvedWeight.weight.bonus_price_min_avg || 0;
         const priceX2Bonus = resolvedWeight.weight.bonus_price_x2_avg || 0;
 
-        console.log(`Part ${index} (${rarity}): ${resolvedWeight.source.toUpperCase()} - Rep: +${repBonus}, Min: +${priceMinBonus}, x2: +${priceX2Bonus}`);
-
         totalBonusRep += repBonus;
         totalBonusPriceMin += priceMinBonus;
         totalBonusPriceX2 += priceX2Bonus;
         observationCounts[rarity] = resolvedWeight.weight.observation_count || 0;
         usedTypeSpecific = usedTypeSpecific || resolvedWeight.source === "type";
-      } else if (rarity !== "Stock") {
-        console.warn(`Part ${index} (${rarity}): NO WEIGHTS FOUND!`);
       }
     });
 
@@ -348,14 +328,7 @@ export default function Simulateur() {
     
     let basePriceX2 = 0;
     try {
-      console.log("Fetching stock observation for car_id:", selectedModel.id, "model:", selectedModel.model);
       basePriceX2 = await getStockBasePriceX2(selectedModel.id);
-
-      if (basePriceX2 > 0) {
-        console.log("Found base price x2 from stock observation:", basePriceX2);
-      } else {
-        console.log("No stock observation with price_x2 found, will use K multiplier fallback");
-      }
     } catch (e) {
       console.error("Error fetching stock obs for x2 base", e);
     }
@@ -363,19 +336,6 @@ export default function Simulateur() {
     const basePriceX2Stock = basePriceX2 > 0 ? basePriceX2 : (basePrice * (carType?.k_multiplier_avg || 2.3));
     const priceX2 = basePriceX2Stock + totalBonusPriceX2;
     
-    console.log("ML Calculation Summary:");
-    console.log("- Base Price Min:", basePrice);
-    console.log("- Total Bonus Price Min:", totalBonusPriceMin);
-    console.log("- Final Price Min:", priceMin);
-    console.log("- Base Price x2 (stock):", basePriceX2Stock);
-    console.log("- K Multiplier:", carType?.k_multiplier_avg || 2.3);
-    console.log("- Total Bonus Price x2:", totalBonusPriceX2);
-    console.log("- Final Price x2:", priceX2);
-    console.log("- Base Rep:", baseRep);
-    console.log("- Total Bonus Rep:", totalBonusRep);
-    console.log("- Final Rep:", totalRep);
-    console.log("- Used Type-Specific:", usedTypeSpecific);
-
     const counts = Object.values(observationCounts).filter(c => c > 0);
     const minObservations = counts.length > 0 ? Math.min(...counts) : 0;
     
@@ -416,15 +376,6 @@ export default function Simulateur() {
     } else {
       observationDetails += ` • ${t("simulator.observation.nodata")}`;
     }
-
-    console.log("ML Estimation:", {
-      min: priceMin,
-      max: priceMax,
-      reco: priceReco,
-      x2: priceX2,
-      confidence,
-      observationCounts,
-    });
 
     setPrices({
       min: Math.round(priceMin),
