@@ -14,6 +14,7 @@ position: 10
 
 ## Notes
 Passe ciblée de nettoyage sans modifier inutilement la logique métier validée. La priorité est de retirer les logs de debug, le code mort, les variables devenues inutiles après les correctifs récents, et les branches obsolètes qui compliquent la maintenance. La chaîne critique du simulateur et de l’apprentissage doit rester strictement équivalente fonctionnellement.
+Première passe terminée sur `src/pages/simulateur.tsx` et `src/services/learningEngineService.ts`. Il reste des logs de debug dans `src/pages/upload.tsx` et `src/pages/api/run-learning.ts` avant validation finale.
 
 ## Checklist
 - [ ] Retirer les logs de debug verbeux dans le simulateur et les services métier critiques
